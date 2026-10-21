@@ -685,7 +685,7 @@ html.mobon,html.mobon body{overflow:hidden}
 a.btn{text-decoration:none;display:inline-block}
 a.brand{text-decoration:none;color:inherit}
 html.gated .top,html.gated main{visibility:hidden}
-.sync{display:inline-flex!important;align-items:center;gap:5px}
+.sync{display:flex!important;align-items:center;gap:5px}
 .sync::before{content:"";width:7px;height:7px;border-radius:50%;background:var(--muted)}
 .sync.ok::before{background:var(--ok)}.sync.wait::before{background:var(--accent)}.sync.err::before,.sync.off::before{background:var(--danger)}
 </style>
@@ -1174,7 +1174,6 @@ const teamRight=a=>TEAM==='km'?a.kabine:((a.teams||{})[TEAM]||null);
 const mapRole=a=>{if(!a||a.status!=='ok')return null;if(a.is_admin)return 'admin';const r=teamRight(a);return r==='edit'?'trainer':r==='view'?'view':r==='tv'?'tv':null};
 const HOME='../';
 const toHome=k=>location.replace(HOME+'?'+k+'=kabine'+(teamQ()?'&'+teamQ():''));
-function seedTeam(){S.players=[];S.drills=stdDrills();S.cats=CATS.slice();S.tvc=TVC0()}
 function showTeam(){if(TEAM==='km')return;const b=document.querySelector('.brand b');if(b)b.textContent=TEAMSHORT+' Kabine';document.title=TEAMSHORT+' Kabine'}
 function seedReal(){
   S.players=ROSTER.map(([l,f],i)=>({id:'p'+(i+1),first:f,last:l,num:'',pos:'',photo:null}))
@@ -1225,7 +1224,9 @@ async function afterLogin(user){
   try{
     const rows=await fetchDocs();
     S=emptyS();loadUI();loadDocs(rows);
-    if(!rows.length&&(TEAM==='km'?ROLE==='admin':canEdit())){if(TEAM==='km')seedReal();else seedTeam();normalize();await push()}
+    if(TEAM==='km'){if(!rows.length&&ROLE==='admin'){seedReal();normalize();await push()}}
+    // Neue Mannschaft: Standard-Übungen und Einstellungen ergänzen, auch wenn Spieler schon per SQL eingetragen wurden
+    else if(!rows.some(r=>r.key==='meta:tv')&&canEdit()){if(!S.drills.length)S.drills=stdDrills();normalize();await push()}
   }catch(e){gate('err',loginMsg(e));return}
   await loadMembers();subscribe();ungate();setSync(canEdit()?'ok':'view');render();
   loadExt().then(ch=>{if(ch)scheduleRender()});
