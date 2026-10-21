@@ -357,8 +357,10 @@ input[type=range]{width:100%;accent-color:var(--accent)}
 .kc .kp{position:relative;width:100%;aspect-ratio:4/5;background:#202126}
 .kc .kp .ini{font-size:calc(var(--cw) * .28)}
 .kc .kpos{position:absolute;left:8px;top:8px;background:rgba(10,11,13,.82);color:var(--accent);font-family:var(--display);font-weight:700;letter-spacing:.08em;font-size:calc(var(--cw) * .085);line-height:1;padding:5px 8px;border-radius:7px}
-.kc .kn{height:calc(var(--cw) * .4);display:flex;flex-direction:column;justify-content:center;gap:3px;padding:0 calc(var(--cw) * .07);border-top:3px solid var(--accent)}
-.kc .kl{font-family:var(--display);font-weight:700;text-transform:uppercase;font-size:calc(var(--cw) * .15);line-height:1;white-space:nowrap}
+.kc .kn{height:calc(var(--cw) * .4);display:flex;align-items:center;gap:calc(var(--cw) * .09);padding:0 calc(var(--cw) * .06);border-top:3px solid var(--accent);min-width:0}
+.kc .knr{flex:none;font-family:var(--display);font-weight:700;color:var(--accent);font-size:calc(var(--cw) * .22);line-height:.9;font-variant-numeric:tabular-nums;letter-spacing:-.02em}
+.kc .knm{flex:1;min-width:0;display:flex;flex-direction:column;justify-content:center;gap:calc(var(--cw) * .02)}
+.kc .kl{font-family:var(--display);font-weight:700;text-transform:uppercase;font-size:calc(var(--cw) * .15);line-height:1;white-space:nowrap;overflow:hidden}
 .kc .kl em{font-style:normal;color:var(--accent);margin-right:.28em}
 .kc .kf{color:#b5b3ab;font-size:calc(var(--cw) * .095);line-height:1.1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .kc.empty{background:transparent;border:2px dashed #2f3036}
@@ -454,14 +456,15 @@ i.pb.pb-G{color:var(--fg)}
 .posseg button{min-width:28px;padding:6px 6px}
 @media (max-width:420px){.prow .posseg{display:grid;grid-template-columns:1fr 1fr}}
 /* Einblenden pro Linie */
-.stage.fx .lb,.stage.fx .gkline,.stage.fx .urink,.stage.fx .ur,.stage.fx .tg,.stage.fx .krow,.stage.fx .kp,.stage.fx .kl,.stage.fx .smleft,.stage.fx .smc,.stage.fx .cmr,.stage.fx .kor,.stage.fx .kcol .kp,.stage.fx .krest .kl{animation:cardin .7s cubic-bezier(.2,.7,.2,1) both;animation-delay:var(--d,0s)}
+.stage.fx .lb,.stage.fx .gkline,.stage.fx .urink,.stage.fx .ur,.stage.fx .tg,.stage.fx .krow,.stage.fx .kq,.stage.fx .kli,.stage.fx .smleft,.stage.fx .smc,.stage.fx .cmr,.stage.fx .kor,.stage.fx .kcol .kq,.stage.fx .krest .kli{animation:cardin .7s cubic-bezier(.2,.7,.2,1) both;animation-delay:var(--d,0s)}
 @keyframes cardin{from{opacity:0;transform:translateY(22px)}to{opacity:1;transform:none}}
-@media (prefers-reduced-motion:reduce){.stage.fx .lb,.stage.fx .gkline,.stage.fx .urink,.stage.fx .ur,.stage.fx .tg,.stage.fx .krow,.stage.fx .kp,.stage.fx .kl,.stage.fx .smleft,.stage.fx .smc,.stage.fx .cmr,.stage.fx .kor,.stage.fx .kcol .kp,.stage.fx .krest .kl{animation:none}}
+@media (prefers-reduced-motion:reduce){.stage.fx .lb,.stage.fx .gkline,.stage.fx .urink,.stage.fx .ur,.stage.fx .tg,.stage.fx .krow,.stage.fx .kq,.stage.fx .kli,.stage.fx .smleft,.stage.fx .smc,.stage.fx .cmr,.stage.fx .kor,.stage.fx .kcol .kq,.stage.fx .krest .kli{animation:none}}
 /* Handy-Ansicht */
 html.mobon,html.mobon body{overflow:hidden}
-.mob{position:fixed;inset:0;z-index:16;background:var(--stage);overflow-y:auto;-webkit-overflow-scrolling:touch;padding-top:env(safe-area-inset-top,0px);padding-bottom:calc(24px + env(safe-area-inset-bottom,0px));padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));--mw:min(100vw - 32px,560px)}
-.mob>*{max-width:560px;margin-inline:auto}
-.mobh{display:flex;align-items:center;gap:12px;padding-block:14px 10px;position:sticky;top:0;background:var(--stage);z-index:2}
+/* Kopfzeile und Reiter bleiben stehen, nur der Inhalt darunter scrollt */
+.mob{position:fixed;inset:0;z-index:16;background:var(--stage);display:flex;flex-direction:column;overflow:hidden;padding-top:env(safe-area-inset-top,0px);padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));--mw:min(100vw - 32px,560px)}
+.mob>*{width:100%;max-width:560px;margin-inline:auto;flex:none}
+.mobh{display:flex;align-items:center;gap:12px;padding-block:14px 10px;background:var(--stage)}
 .mobh img{height:52px;width:auto}
 .mobt{flex:1;min-width:0}
 .mobt .e{font-family:var(--display);font-weight:700;letter-spacing:.16em;text-transform:uppercase;color:var(--accent);font-size:13px}
@@ -470,7 +473,9 @@ html.mobon,html.mobon body{overflow:hidden}
 .mobt small{color:var(--muted);font-size:13px}
 .mobtabs{display:flex;margin-bottom:12px}
 .mobtabs button{flex:1}
-.mobb{display:grid;gap:22px}
+.mob>.mobb{flex:1 1 auto;min-height:0;overflow-y:auto;-webkit-overflow-scrolling:touch;overscroll-behavior:contain;max-width:none;margin-inline:0;padding-bottom:calc(24px + env(safe-area-inset-bottom,0px))}
+.mobb{display:grid;gap:22px;align-content:start;grid-auto-rows:max-content}
+.mobb>*{width:100%;max-width:560px;margin-inline:auto}
 .mlb{display:flex;flex-direction:column;align-items:center;gap:10px;--cw:calc((var(--mw) - 20px) / 3)}
 .mlb .kr{gap:10px}
 .mlb .kr.k4{--cw:calc((var(--mw) - 24px) / 4);gap:8px}
@@ -535,22 +540,22 @@ html.mobon,html.mobon body{overflow:hidden}
 .kking span{color:#ff8a8d;font-size:28px}
 .krank{position:relative;flex:1;min-height:0;display:grid;grid-template-columns:1.05fr 1fr;gap:44px}
 .kpod{display:flex;align-items:flex-end;justify-content:center;gap:20px;min-height:0}
-.kp{display:flex;flex-direction:column;align-items:center;gap:10px;width:200px}
+.kq{display:flex;flex-direction:column;align-items:center;gap:10px;width:200px}
 .kpav{width:150px;height:150px;border-radius:50%;overflow:hidden;background:#202126;border:5px solid #3a3b40;display:block}
 .kpav .ini{font-size:46px}
-.kp.p1 .kpav{width:180px;height:180px;border-color:#f5c518}
-.kp.p2 .kpav{border-color:#c9ccd2}.kp.p3 .kpav{border-color:#c98a4b}
+.kq.p1 .kpav{width:180px;height:180px;border-color:#f5c518}
+.kq.p2 .kpav{border-color:#c9ccd2}.kq.p3 .kpav{border-color:#c98a4b}
 .kpn{font-family:var(--display);font-weight:700;font-size:34px;text-transform:uppercase;white-space:nowrap;max-width:100%;line-height:1}
 .kpv{font-family:var(--display);font-weight:700;font-size:30px;color:var(--ok);font-variant-numeric:tabular-nums}
 .kstep{width:100%;border-radius:14px 14px 0 0;display:grid;place-items:center;font-family:var(--display);font-weight:700;font-size:64px;color:#0a0b0d}
-.kp.p1 .kstep{height:260px;background:#f5c518}.kp.p2 .kstep{height:190px;background:#c9ccd2}.kp.p3 .kstep{height:140px;background:#c98a4b}
+.kq.p1 .kstep{height:260px;background:#f5c518}.kq.p2 .kstep{height:190px;background:#c9ccd2}.kq.p3 .kstep{height:140px;background:#c98a4b}
 .klist{display:grid;grid-template-columns:1fr 1fr;grid-auto-flow:column;gap:8px 18px;align-content:start;min-height:0}
-.kl{display:flex;align-items:center;gap:12px;background:#16171a;border:1px solid #26272c;border-radius:10px;padding:6px 14px 6px 6px;min-width:0;font-size:24px}
-.kl .kr{font-family:var(--display);font-weight:700;color:#a6a49c;width:42px;text-align:right;flex:none}
+.kli{display:flex;align-items:center;gap:12px;background:#16171a;border:1px solid #26272c;border-radius:10px;padding:6px 14px 6px 6px;min-width:0;font-size:24px}
+.kli .krk{font-family:var(--display);font-weight:700;color:#a6a49c;width:42px;text-align:right;flex:none}
 .klav{width:40px;height:40px;border-radius:50%;overflow:hidden;background:#202126;display:block;flex:none}
 .klav .ini{font-size:14px}
-.kl .kln{flex:1;min-width:0;white-space:nowrap}
-.kl b{font-family:var(--display);color:var(--ok);font-variant-numeric:tabular-nums}
+.kli .kln{flex:1;min-width:0;white-space:nowrap}
+.kli b{font-family:var(--display);color:var(--ok);font-variant-numeric:tabular-nums}
 /* TV Shot Map */
 .tvh .t em{font-style:normal;color:var(--accent);padding-inline:.25em}
 .smwrap{position:relative;flex:1;min-height:0;display:grid;grid-template-columns:1.75fr 1fr;gap:40px}
@@ -620,13 +625,13 @@ html.mobon,html.mobon body{overflow:hidden}
 .kmore{color:#a6a49c;font-size:22px;text-align:right}
 .kdone.s{font-size:44px}
 .kpod.sm{flex:none;height:370px}
-.kpod.sm .kp{width:170px}
-.kpod.sm .kpav{width:96px;height:96px}.kpod.sm .kp.p1 .kpav{width:116px;height:116px}
+.kpod.sm .kq{width:170px}
+.kpod.sm .kpav{width:96px;height:96px}.kpod.sm .kq.p1 .kpav{width:116px;height:116px}
 .kpod.sm .kpn{font-size:28px}.kpod.sm .kpv{font-size:26px}
-.kpod.sm .kp.p1 .kstep{height:130px}.kpod.sm .kp.p2 .kstep{height:95px}.kpod.sm .kp.p3 .kstep{height:70px}
+.kpod.sm .kq.p1 .kstep{height:130px}.kpod.sm .kq.p2 .kstep{height:95px}.kpod.sm .kq.p3 .kstep{height:70px}
 .kpod.sm .kstep{font-size:48px}
 .krest{display:grid;gap:6px;align-content:start;min-height:0;overflow:hidden}
-.krest .kl{font-size:22px;padding:6px 14px}
+.krest .kli{font-size:22px;padding:6px 14px}
 /* Goalies */
 .gkgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:8px}
 .gkcard{display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:12px;align-items:center;text-align:left;border:1px solid var(--line);background:var(--surface);border-radius:12px;padding:8px 12px 8px 8px}
@@ -841,6 +846,16 @@ function migrate(s){
 const CFG={url:'https://zxjdzvdrcrwjumprayeo.supabase.co',key:'sb_publishable_AbQNgdUqUT8vaN0XRNFruQ_t7fQd7wg'};
 const configured=()=>!/DEIN-/.test(CFG.url+CFG.key);
 let sb=null;
+// Mannschaft: jede hat ihre eigene Kabine (Adresse …/kabine/?team=u15). Ohne Angabe: Kampfmannschaft.
+const TEAM_PARAM=new URLSearchParams(location.search).get('team');
+let TEAM=((TEAM_PARAM||'km').toLowerCase().replace(/[^a-z0-9-]/g,'').slice(0,20))||'km';
+let TEAMNAME=TEAM==='km'?'Kampfmannschaft':TEAM.toUpperCase(),TEAMSHORT=TEAM==='km'?'Gunners':TEAM.toUpperCase();
+const teamQ=()=>TEAM==='km'?'':'team='+TEAM;
+const dbKey=k=>TEAM==='km'?k:TEAM+'/'+k;
+const fromDb=k=>{if(!k)return null;if(TEAM==='km')return k.includes('/')?null:k;return k.startsWith(TEAM+'/')?k.slice(TEAM.length+1):null};
+// Kurzname für Titel und Shot Map: aus g_teams, sonst aus dem Namen ("EC Warriors Zirl" -> "Warriors")
+const shortOf=n=>{const w=String(n||'').trim().split(/\s+/),P=/^(ec|ehc|hc|sc|ev|sv|ek|ehv|esv|usv|club|team|fc)$/i;return w.find(x=>!P.test(x)&&!/^\d/.test(x))||n};
+async function loadTeamName(){try{const {data}=await sb.from('g_teams').select('*').eq('id',TEAM).maybeSingle();if(data&&data.name){TEAMNAME=data.name;TEAMSHORT=data.short||(TEAM==='km'?'Gunners':shortOf(data.name));return true}return TEAM==='km'}catch(e){return true}}
 const stable=v=>v===null||typeof v!=='object'?JSON.stringify(v===undefined?null:v):Array.isArray(v)?'['+v.map(stable).join(',')+']':'{'+Object.keys(v).sort().filter(k=>v[k]!==undefined).map(k=>JSON.stringify(k)+':'+stable(v[k])).join(',')+'}';
 const KINDS={player:'players',game:'games',training:'trainings',drill:'drills',board:'boards'};
 function emptyS(){return {v:3,players:[],games:[],trainings:[],drills:[],boards:[],cats:CATS.slice(),tvc:TVC0(),tray:[],curGame:null,curTraining:null,r2:true}}
@@ -872,8 +887,8 @@ const rowsSig=rows=>rows.map(r=>r.key+'='+stable(r.data)).sort().join('\n');
 const syncedSig=()=>[...synced].map(([k,j])=>k+'='+j).sort().join('\n');
 async function fetchDocs(){
   const out=[];let from=0;
-  for(;;){const {data,error}=await sb.from('kb_docs').select('key,data').range(from,from+999);if(error)throw error;out.push(...data);if(data.length<1000)break;from+=1000}
-  return out;
+  for(;;){const {data,error}=await sb.from('kb_docs').select('key,data').eq('team',TEAM).range(from,from+999);if(error)throw error;out.push(...data);if(data.length<1000)break;from+=1000}
+  return out.map(r=>({key:fromDb(r.key),data:r.data})).filter(r=>r.key);
 }
 function loadDocs(rows){
   const keep={curGame:S.curGame,curTraining:S.curTraining,tray:S.tray||[]};
@@ -882,7 +897,7 @@ function loadDocs(rows){
   normalize();
 }
 function onDocChange(pl,after){
-  const key=(pl.new&&pl.new.key)||(pl.old&&pl.old.key);if(!key)return;
+  const key=fromDb((pl.new&&pl.new.key)||(pl.old&&pl.old.key));if(!key)return;
   if(pl.eventType==='DELETE'){if(!synced.has(key))return;synced.delete(key);applyDoc(key,null)}
   else{const j=stable(pl.new.data);if(synced.get(key)===j)return;synced.set(key,j);applyDoc(key,pl.new.data)}
   normalize();after&&after();
@@ -1107,7 +1122,8 @@ function smCtl(e){
   const opts=['all','1','2','3'].concat(ot?['4']:[]).concat(['cmp']);
   return `<div class="smctl"><div class="sml2">Shot Map am TV: ${esc(g.home)} – ${esc(g.away)}${g.status==='live'?` <span class="chip live">live · ${smPl(g.period||1)}</span>`:''}</div><div class="chips">${opts.map(o=>`<button class="fchip" data-act="smShow" data-v="${o}" aria-pressed="${on&&sc===o}">${smScopeName(o)}</button>`).join('')}</div></div>`;
 }
-function kasseSlides(){const c=tvc();return EXT.kasse&&c.ts.kasse!==false?[{k:'kasse',n:'Mannschaftskasse'}]:[]}
+const isKM=()=>typeof TEAM==='undefined'||TEAM==='km';
+function kasseSlides(){const c=tvc();return isKM()&&EXT.kasse&&c.ts.kasse!==false?[{k:'kasse',n:'Mannschaftskasse'}]:[]}
 function slidesFor(e){
   if(!e)return boardSlides();const c=tvc(),out=[];
   if(e.k==='game'){const g=e.x;
@@ -1156,12 +1172,15 @@ function stageFor(e,s){
   if(s.k==='groups')return tvTraining(e.x);
   return tvDrill(e.x,+s.k.slice(1));
 }
+// Kurzname der eigenen Mannschaft für Titel und Shot Map („Gunners“, „Warriors“)
+const US=()=>typeof TEAMSHORT!=='undefined'&&TEAMSHORT?TEAMSHORT:'Gunners';
+const usRe=()=>new RegExp(US().replace(/[.*+?^${}()|[\]\\]/g,'\\$&'),'i');
 function kc(k,nolab){
   const p=P(slotGet(k));
   const pos=k==='g1'?'Goalie':k==='g2'?'Backup':SLOTNAME[k.split('.')[2]];
   const lab=nolab?'':`<span class="kpos">${pos}</span>`;
   if(!p)return `<div class="kc empty"><div class="kp">${lab}</div><div class="kn"></div></div>`;
-  return `<div class="kc${k==='g2'?' dim':''}"><div class="kp">${photo(p)}${lab}</div><div class="kn"><div class="kl fit">${p.num?`<em>${esc(p.num)}</em>`:''}${esc(p.last)}</div><div class="kf">${esc(p.first)}</div></div></div>`;
+  return `<div class="kc${k==='g2'?' dim':''}"><div class="kp">${photo(p)}${lab}</div><div class="kn">${p.num?`<span class="knr">${esc(p.num)}</span>`:''}<div class="knm"><div class="kl fit">${esc(p.last)}</div><div class="kf">${esc(p.first)}</div></div></div></div>`;
 }
 /* ---------- Kasse und Shot Map ---------- */
 let EXT={kasse:null,sm:[],demo:false,kErr:false,smErr:false};
@@ -1217,15 +1236,15 @@ function tvKasseRank(){
   if(!list.length)return tvHead('Mannschaftskasse','Rangliste',meta,demoTag())+'<div class="kdone">Noch keine Einzahlungen.</div>';
   const top=list.slice(0,3),rest=list.slice(3,23),ord=[1,0,2].filter(i=>top[i]);
   return tvHead('Mannschaftskasse','Rangliste',meta,demoTag())+
-  `<div class="krank"><div class="kleft">${right?`<div class="kking">${right}</div>`:'<span></span>'}<div class="kpod">${ord.map(i=>{const r=top[i];return `<div class="kp p${i+1}" style="--d:${(.15+(2-i)*.25).toFixed(2)}s">${kAv(r,'kpav')}<div class="kpn fit">${r.p?esc(r.p.last):esc(r.name)}</div><div class="kpv">${eur(r.paid)}</div><div class="kstep"><span>${i+1}</span></div></div>`}).join('')}</div></div>
-  ${rest.length?`<div class="klist" style="grid-template-rows:repeat(${Math.ceil(rest.length/2)},minmax(0,1fr))">${rest.map((r,i)=>`<div class="kl" style="--d:${(.9+i*.04).toFixed(2)}s"><span class="kr">${i+4}.</span>${kAv(r,'klav')}<span class="kln fit">${r.p?esc(r.p.last+' '+r.p.first):esc(r.name)}</span><b>${eur(r.paid)}</b></div>`).join('')}</div>`:''}</div>`;
+  `<div class="krank"><div class="kleft">${right?`<div class="kking">${right}</div>`:'<span></span>'}<div class="kpod">${ord.map(i=>{const r=top[i];return `<div class="kq p${i+1}" style="--d:${(.15+(2-i)*.25).toFixed(2)}s">${kAv(r,'kpav')}<div class="kpn fit">${r.p?esc(r.p.last):esc(r.name)}</div><div class="kpv">${eur(r.paid)}</div><div class="kstep"><span>${i+1}</span></div></div>`}).join('')}</div></div>
+  ${rest.length?`<div class="klist" style="grid-template-rows:repeat(${Math.ceil(rest.length/2)},minmax(0,1fr))">${rest.map((r,i)=>`<div class="kli" style="--d:${(.9+i*.04).toFixed(2)}s"><span class="krk">${i+4}.</span>${kAv(r,'klav')}<span class="kln fit">${r.p?esc(r.p.last+' '+r.p.first):esc(r.name)}</span><b>${eur(r.paid)}</b></div>`).join('')}</div>`:''}</div>`;
 }
 /* Shot Map */
-const smUs=g=>/gunners/i.test(g.home||'')?'H':/gunners/i.test(g.away||'')?'A':'H';
+const smUs=g=>usRe().test(g.home||'')?'H':usRe().test(g.away||'')?'A':'H';
 const smShort=n=>{const w=String(n||'').trim().split(/\s+/);const P=/^(ec|ehc|hc|sc|ev|sv|ek|ac|ehv|ksv|esv|usv|eis|club|team|fc)$/i;return w.find(x=>!P.test(x)&&!/^\d/.test(x))||w[w.length-1]||n};
 // Welches Shot-Map-Spiel gehört zu einem Kabinen-Spiel: fest gewählt (game.sm) oder automatisch, wenn es am selben Tag genau ein Gunners-Spiel gibt
 const smAll=()=>(EXT.sm||[]).filter(g=>g&&g.id&&Array.isArray(g.shots)&&!g.example);
-const smCand=game=>game&&game.date?smAll().filter(g=>g.date===game.date&&/gunners/i.test((g.home||'')+' '+(g.away||''))):[];
+const smCand=game=>game&&game.date?smAll().filter(g=>g.date===game.date&&usRe().test((g.home||'')+' '+(g.away||''))):[];
 function smLink(game){
   if(!game)return {g:null,mode:'none'};
   if(game.sm===null)return {g:null,mode:'none'};
@@ -1241,12 +1260,12 @@ function smLinkCard(g){
   const autoTxt=c.length===1?'Automatisch (gefunden)':c.length?'Automatisch (mehrere am Tag)':'Automatisch';
   const v=g.sm===null?'none':g.sm||'auto';
   const opt=x=>`<option value="${esc(x.id)}"${v===x.id?' selected':''}>${esc(smLabel(x))}</option>`;
-  const st=L.mode==='many'?`<div class="smwarn">Am ${esc(fmtDate(g.date))} gibt es ${L.n} Gunners-Spiele in der Shot Map. Wähle das richtige aus, sonst zeigt der TV keine Shot Map.</div>`
+  const st=L.mode==='many'?`<div class="smwarn">Am ${esc(fmtDate(g.date))} gibt es ${L.n} ${esc(US())}-Spiele in der Shot Map. Wähle das richtige aus, sonst zeigt der TV keine Shot Map.</div>`
     :L.mode==='gone'?'<div class="smwarn">Das gewählte Shot-Map-Spiel gibt es nicht mehr. Wähle ein anderes.</div>'
     :L.mode==='fixed'?`<div class="small muted"><b class="smsel">${esc(smLabel(L.g))}</b><br>Fest verknüpft. Der TV zeigt genau dieses Spiel, auch wenn gleichzeitig andere laufen.</div>`
     :L.mode==='auto'?`<div class="small muted"><b class="smsel">${esc(smLabel(L.g))}</b><br>Automatisch gefunden (selber Tag). Wähle es aus der Liste, um es fest zu verknüpfen.</div>`
     :L.mode==='none'?'<div class="small muted">Für dieses Spiel wird keine Shot Map am TV gezeigt.</div>'
-    :'<div class="small muted">Sobald in der Shot Map ein Gunners-Spiel vom selben Tag angelegt wird, verknüpft die Kabine es automatisch.</div>';
+    :`<div class="small muted">Sobald in der Shot Map ein ${esc(US())}-Spiel vom selben Tag angelegt wird, verknüpft die Kabine es automatisch.</div>`;
   return `<section class="card smlink"><label class="field"><span>Shot-Map-Spiel für den Kabinen-TV</span><select data-smlink="1">
     <option value="auto"${v==='auto'?' selected':''}>${esc(autoTxt)}</option><option value="none"${v==='none'?' selected':''}>Keine Shot Map zeigen</option>
     ${same.length?`<optgroup label="Am selben Tag">${same.map(opt).join('')}</optgroup>`:''}${other.length?`<optgroup label="Andere Spiele">${other.map(opt).join('')}</optgroup>`:''}
@@ -1316,8 +1335,8 @@ function tvKasse(){
   const top=paid.slice(0,3),rest=paid.slice(3,10),ord=[1,0,2].filter(i=>top[i]);
   return tvHead('Mannschaftskasse','Strafen und Rangliste',meta,demoTag())+
   `<div class="kcomb"><section class="kcol"><h4>Offen · bis Monatsende zahlen</h4>${show.length?`<div class="kopen" style="grid-template-columns:repeat(${cols},minmax(0,1fr));grid-template-rows:repeat(${rowsN},minmax(0,1fr))">${show.map((r,i)=>`<div class="kor" style="--d:${Math.min(.1+i*.04,1).toFixed(2)}s">${kAv(r,'koav')}<span class="kon fit">${r.p?`${r.p.num?`<em>${esc(r.p.num)}</em>`:''}${esc(r.p.last)} <small>${esc(r.p.first)}</small>`:esc(r.name)}</span><span class="koa"><b>${r.open>0?eur(r.open):''}</b>${r.beer>0?`<small>+${r.beer} ${r.beer===1?'Kiste':'Kisten'}</small>`:''}</span></div>`).join('')}</div>${n>show.length?`<div class="kmore">+ ${n-show.length} weitere</div>`:''}`:'<div class="kdone s">Alles bezahlt.</div>'}</section>
-  <section class="kcol"><h4>Rangliste · eingezahlt</h4>${paid.length?`<div class="kpod sm">${ord.map(i=>{const r=top[i];return `<div class="kp p${i+1}" style="--d:${(.3+(2-i)*.2).toFixed(2)}s">${kAv(r,'kpav')}<div class="kpn fit">${r.p?esc(r.p.last):esc(r.name)}</div><div class="kpv">${eur(r.paid)}</div><div class="kstep"><span>${i+1}</span></div></div>`}).join('')}</div>
-  ${rest.length?`<div class="krest">${rest.map((r,i)=>`<div class="kl" style="--d:${(.9+i*.05).toFixed(2)}s"><span class="kr">${i+4}.</span><span class="kln fit">${r.p?esc(r.p.last+' '+r.p.first):esc(r.name)}</span><b>${eur(r.paid)}</b></div>`).join('')}</div>`:''}`:'<div class="kdone s">Noch keine Einzahlungen.</div>'}</section></div>`;
+  <section class="kcol"><h4>Rangliste · eingezahlt</h4>${paid.length?`<div class="kpod sm">${ord.map(i=>{const r=top[i];return `<div class="kq p${i+1}" style="--d:${(.3+(2-i)*.2).toFixed(2)}s">${kAv(r,'kpav')}<div class="kpn fit">${r.p?esc(r.p.last):esc(r.name)}</div><div class="kpv">${eur(r.paid)}</div><div class="kstep"><span>${i+1}</span></div></div>`}).join('')}</div>
+  ${rest.length?`<div class="krest">${rest.map((r,i)=>`<div class="kli" style="--d:${(.9+i*.05).toFixed(2)}s"><span class="krk">${i+4}.</span><span class="kln fit">${r.p?esc(r.p.last+' '+r.p.first):esc(r.name)}</span><b>${eur(r.paid)}</b></div>`).join('')}</div>`:''}`:'<div class="kdone s">Noch keine Einzahlungen.</div>'}</section></div>`;
 }
 const demoTag=()=>EXT.demo?'Beispieldaten':'';
 
@@ -1325,7 +1344,7 @@ const demoTag=()=>EXT.demo?'Beispieldaten':'';
 function tvHead(eye,title,meta,right){return `<div class="ring"></div><div class="ring b"></div><div class="tvh"><img src="${LOGO}" alt=""><div style="min-width:0"><div class="e">${eye}</div><div class="t fit">${title}</div><div class="m">${meta}</div></div>${right?`<div class="r">${right}</div>`:''}</div>`}
 function gameHead(g,eye){
   const opp=esc(g.opp||'Gegner');
-  const title=g.home?`Gunners<em>vs</em>${opp}`:`${opp}<em>vs</em>Gunners`;
+  const title=g.home?`${esc(US())}<em>vs</em>${opp}`:`${opp}<em>vs</em>${esc(US())}`;
   const meta=[fmtDate(g.date),g.time?g.time+' Uhr':''].filter(Boolean).join(' · ');
   return tvHead(eye,title,meta,g.home?'Heimspiel':'Auswärtsspiel');
 }
@@ -1420,7 +1439,10 @@ document.addEventListener('fullscreenchange',fitStage);
 
 /* ---------- TV-Seite ---------- */
 U.tab='tv';
-const CACHE='gunners-kabine-tv-cache';
+// Welche Kabine der Fernseher zeigt, entscheidet der TV-Login (oder ?team=… in der Adresse)
+const LASTTEAM='gunners-kabine-tv-team';
+if(!TEAM_PARAM){try{const t=localStorage.getItem(LASTTEAM);if(t&&/^[a-z0-9-]{1,20}$/.test(t))TEAM=t}catch(e){}}
+const cacheKey=()=>'gunners-kabine-tv-cache'+(TEAM==='km'?'':'-'+TEAM);
 function save(){}
 function toast(){}
 function render(){renderStage(true)}
@@ -1431,7 +1453,7 @@ function fitStage(){
 }
 let smT=null,rT=null,cT=null,chan=null,lastSig='',lastOk=0;
 function rerender(){clearTimeout(rT);rT=setTimeout(()=>renderStage(false),300)}
-function saveCache(){clearTimeout(cT);cT=setTimeout(()=>{try{localStorage.setItem(CACHE,JSON.stringify({rows:[...synced].map(([key,j])=>({key,data:JSON.parse(j)})),ext:{kasse:EXT.kasse,sm:EXT.sm},at:Date.now()}))}catch(e){}},1000)}
+function saveCache(){clearTimeout(cT);cT=setTimeout(()=>{try{localStorage.setItem(cacheKey(),JSON.stringify({rows:[...synced].map(([key,j])=>({key,data:JSON.parse(j)})),ext:{kasse:EXT.kasse,sm:EXT.sm},at:Date.now()}))}catch(e){}},1000)}
 const sig=()=>{const e=tvEvent(),s=curSlide();return (e?e.k+':'+e.x.id:'')+'|'+(s?s.k:'')+'|'+pinActive()};
 function net(ok){
   const n=$('#netst');if(ok){lastOk=Date.now();n.hidden=true;return}
@@ -1442,11 +1464,13 @@ function tvGate(kind,msg){
   const logo=`<img class="glogo" src="${LOGO}" alt="EC Gunners Zirl">`;
   const H={
     setup:`${logo}<h2>Noch nicht verbunden</h2><p class="muted">Die Anmeldung konnte nicht geladen werden. Prüfe die Internetverbindung und lade die Seite neu.</p>`,
-    login:`${logo}<h2>Kabinen-TV</h2><p class="muted">Einmal mit dem TV-Login anmelden. Danach bleibt der Fernseher angemeldet.</p>
+    login:`${logo}<h2>Kabinen-TV${TEAM_PARAM&&TEAM!=='km'?' · '+esc(TEAMNAME):''}</h2><p class="muted">Einmal mit dem TV-Login anmelden. Danach bleibt der Fernseher angemeldet.</p>
       <form id="tf" class="gform"><label class="field"><span>E-Mail</span><input id="t-mail" type="email" autocomplete="username" required></label>
       <label class="field"><span>Passwort</span><input id="t-pw" type="password" autocomplete="current-password" required></label>
       <div class="gerr" id="t-err" role="alert">${esc(msg||'')}</div><button class="btn primary" type="submit">Anmelden</button></form>`,
-    nope:`${logo}<h2>Kein Zugriff</h2><p class="muted">Dieser Login ist für die Kabine nicht freigegeben oder wurde gesperrt. Auf der Gunners Startseite unter Personen und Rechte bei Kabine „Nur TV-Gerät“ einstellen.</p><button class="btn" id="t-out">Abmelden</button>`
+    wait:`${logo}<h2>Fast fertig</h2><p class="muted">Dieser Fernseher ist angemeldet. Jetzt auf der Gunners Startseite unter Personen und Rechte beim Login <b>${esc(USER&&USER.email||'')}</b> in der Kabine der Mannschaft „Nur TV-Gerät“ wählen und freischalten. Der Fernseher startet dann von selbst.</p><button class="btn" id="t-out">Abmelden</button>`,
+    noteam:`${logo}<h2>Mannschaft nicht gefunden</h2><p class="muted">Die Mannschaft „${esc(TEAM)}“ aus der Adresse gibt es nicht. Prüfe die Adresse am Ende (…/tv/?team=…).</p>`,
+    nope:`${logo}<h2>Kein Zugriff</h2><p class="muted">Dieser Login ist für die Kabine nicht freigegeben oder wurde gesperrt. Auf der Gunners Startseite unter Personen und Rechte beim TV-Login in der Kabine der Mannschaft „Nur TV-Gerät“ wählen.</p><button class="btn" id="t-out">Abmelden</button>`
   };
   g.innerHTML=`<div class="gcard">${H[kind]}</div>`;
   const o=$('#t-out');if(o)o.onclick=async()=>{try{await sb.auth.signOut()}catch(e){}location.reload()};
@@ -1471,19 +1495,34 @@ function subscribe(uid){
     .on('postgres_changes',{event:'*',schema:'public',table:'g_access',filter:'user_id=eq.'+uid},pl=>{const m=pl.new||{};if(pl.eventType==='DELETE'||!tvOk(m))location.reload();else refresh()})
     .subscribe(st=>{if(st==='SUBSCRIBED'){net(true)}else if(st==='CHANNEL_ERROR'||st==='TIMED_OUT'||st==='CLOSED')net(false)});
 }
-let USER=null;
-const tvOk=a=>!!a&&a.status==='ok'&&(a.is_admin||!!a.kabine);
+let USER=null,waitT=null;
+const rightFor=(a,t)=>!a||a.status!=='ok'?null:a.is_admin?'admin':t==='km'?a.kabine||null:((a.teams||{})[t]||null);
+const tvOk=a=>!!rightFor(a,TEAM);
+function pickTeam(a){
+  if(TEAM_PARAM||!a||a.status!=='ok')return;
+  const tvT=(a.kabine==='tv'?['km']:[]).concat(Object.keys(a.teams||{}).filter(k=>a.teams[k]==='tv'));
+  let t=TEAM;
+  if(tvT.length===1)t=tvT[0];else if(!rightFor(a,t))t=tvT[0]||(a.kabine?'km':Object.keys(a.teams||{})[0])||'km';
+  if(t!==TEAM){TEAM=t;loadDocs([]);EXT.kasse=null;EXT.sm=[];renderStage(false)}
+  try{localStorage.setItem(LASTTEAM,TEAM)}catch(e){}
+}
 async function start(user){
   USER=user;
   const {data:mem,error}=await sb.from('g_access').select('*').eq('user_id',user.id).maybeSingle();
   if(error){net(false);setTimeout(()=>start(user),30000);return}
+  // Neuer TV-Login: meldet sich selbst an und wartet, bis der Admin ihn einer Kabine zuordnet
+  if(!mem||mem.status==='wait'){
+    if(!mem)await sb.from('g_access').insert({user_id:user.id,email:user.email,name:'Fernseher ('+user.email+')',status:'wait'});
+    tvGate('wait');clearTimeout(waitT);waitT=setTimeout(()=>start(user),15000);return}
+  pickTeam(mem);
   if(!tvOk(mem)){tvGate('nope');return}
+  if(!(await loadTeamName())){tvGate('noteam');return}
   $('#gate').hidden=true;
   await loadExt();await refresh(true);subscribe(user.id);
 }
 async function tvBoot(){
   fitStage();
-  try{const c=JSON.parse(localStorage.getItem(CACHE));if(c&&Array.isArray(c.rows)){if(c.ext){EXT.kasse=c.ext.kasse||null;EXT.sm=c.ext.sm||[]}loadDocs(c.rows);lastOk=c.at||0;renderStage(false)}}catch(e){}
+  try{const c=JSON.parse(localStorage.getItem(cacheKey()));if(c&&Array.isArray(c.rows)){if(c.ext){EXT.kasse=c.ext.kasse||null;EXT.sm=c.ext.sm||[]}loadDocs(c.rows);lastOk=c.at||0;renderStage(false)}}catch(e){}
   if(!configured()||!window.supabase){tvGate('setup');return}
   sb=supabase.createClient(CFG.url,CFG.key,{auth:{persistSession:true,autoRefreshToken:true,storageKey:'gunners-kabine-tv-auth'}});
   const {data}=await sb.auth.getSession();

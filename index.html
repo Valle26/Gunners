@@ -65,7 +65,8 @@ h3{font-family:var(--display);font-size:20px;margin:0;font-weight:600;letter-spa
 .tile:hover{border-color:#4a4b52}
 .tile .ic{margin-bottom:auto;width:52px;height:52px;border-radius:16px;display:grid;place-items:center;background:var(--surface-2)}
 .tile .ic svg{width:30px;height:30px}
-.tile b{font-family:var(--display);font-weight:700;font-size:clamp(24px,6.6vw,29px);line-height:1;text-transform:uppercase;letter-spacing:.02em}
+.tile .tk{font-family:var(--display);font-weight:700;font-size:13px;letter-spacing:.12em;text-transform:uppercase;color:var(--accent);margin-bottom:-4px}
+.tile b{font-family:var(--display);font-weight:700;font-size:clamp(24px,6.6vw,29px);overflow-wrap:break-word;hyphens:manual;line-height:1;text-transform:uppercase;letter-spacing:.02em}
 .tile small{color:var(--muted);font-size:14px;max-width:30ch}
 .tile .role{position:absolute;right:18px;top:20px}
 .tile.k{background:linear-gradient(160deg,#2a2410 0%,var(--surface) 55%)}
@@ -92,6 +93,14 @@ h3{font-family:var(--display);font-size:20px;margin:0;font-weight:600;letter-spa
 .admt input{width:20px;height:20px;accent-color:var(--accent)}
 .pact{grid-column:1/-1;display:flex;flex-wrap:wrap;gap:8px;justify-content:flex-end;align-items:center}
 .sec{display:grid;gap:8px}
+.tvlinks{display:flex;flex-wrap:wrap;gap:6px;margin-top:4px}
+.team{display:grid;grid-template-columns:minmax(0,1fr);gap:10px;background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:12px 14px}
+.team .field input,.tadd .field input{width:100%;background:var(--surface-2);border:1px solid var(--line);border-radius:9px;padding:9px 11px;font-size:16px}
+.taddr{display:grid;grid-template-columns:auto minmax(0,1fr);gap:3px 10px;font-size:12px;color:var(--muted);align-items:baseline}
+.taddr code{font-size:12px;color:var(--fg);overflow-wrap:anywhere;font-family:ui-monospace,Menlo,monospace}
+.team .btn{justify-self:start}
+.tnames{display:grid;grid-template-columns:minmax(0,2fr) minmax(0,1fr);gap:10px}@media (max-width:520px){.tnames{grid-template-columns:minmax(0,1fr)}}
+.tadd{display:flex;gap:8px;align-items:end;flex-wrap:wrap}.tadd .field{flex:1;min-width:200px}
 
 /* Anmelden */
 .gate{position:fixed;inset:0;z-index:40;background:var(--bg);display:grid;place-items:center;overflow:auto;padding-block:24px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
@@ -125,7 +134,7 @@ const LOGO='data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAWgAAAEPCAMAAABYyq4FAA
 const CFG={url:'https://zxjdzvdrcrwjumprayeo.supabase.co',key:'sb_publishable_AbQNgdUqUT8vaN0XRNFruQ_t7fQd7wg'};
 const $=s=>document.querySelector(s);
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-let sb=null,ME=null,ACC=null,ROWS=[],arm=null,chan=null;
+let sb=null,ME=null,ACC=null,ROWS=[],arm=null,chan=null,TEAMS=[{id:'km',name:'Kampfmannschaft',sort:0}];
 const Q=new URLSearchParams(location.search);
 const APPS={
   kabine:{n:'Gunners Kabine',d:'Linien, Training, Übungen, Taktiktafel und Kabinen-TV',href:'kabine/',cls:'k',opts:[['','Kein Zugriff'],['view','Ansehen'],['edit','Bearbeiten'],['tv','Nur TV-Gerät']],
@@ -137,6 +146,17 @@ const APPS={
 };
 const RN={view:'Ansehen',edit:'Bearbeiten',tv:'TV-Gerät',admin:'Admin'};
 const appRole=(a,k)=>!a||a.status!=='ok'?null:a.is_admin?'admin':a[k]||null;
+// Kabine pro Mannschaft: Kampfmannschaft in der Spalte kabine, weitere in teams {"km2":"edit"}; ein TV-Login gehört zu genau einer Kabine
+const kabRole=(a,t)=>!a||a.status!=='ok'?null:a.is_admin?'admin':t==='km'?a.kabine||null:((a.teams||{})[t]||null);
+const isTvLogin=a=>!a.is_admin&&(a.kabine==='tv'||Object.values(a.teams||{}).includes('tv'));
+const multi=()=>TEAMS.length>1;
+const shortOf=(n,id)=>{if(id==='km')return 'Gunners';const w=String(n||'').trim().split(/\s+/),P=/^(ec|ehc|hc|sc|ev|sv|ek|ehv|esv|usv|club|team|fc)$/i;return w.find(x=>!P.test(x)&&!/^\d/.test(x))||n};
+const shy=t=>String(t).replace(/^Mannschaftskasse$/,'Mannschafts&shy;kasse').replace(/Kampfmannschaft/,'Kampf&shy;mannschaft');
+const teamQ=t=>t==='km'?'':'?team='+encodeURIComponent(t);
+const kabHref=t=>'kabine/'+teamQ(t),tvHref=t=>'tv/'+teamQ(t);
+const kabName=t=>multi()?'Kabine '+t.name:'Gunners Kabine';
+const KOPTS=t=>APPS.kabine.opts;
+const slug=n=>String(n).toLowerCase().replace(/ä/g,'ae').replace(/ö/g,'oe').replace(/ü/g,'ue').replace(/ß/g,'ss').normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-z0-9]+/g,'-').replace(/^-+|-+$/g,'').slice(0,20);
 const pname=r=>r.name||String(r.email||'').split('@')[0]||'Ohne Namen';
 const ini=r=>pname(r).replace(/[^\p{L}\s._-]/gu,'').split(/[ ._-]/).filter(Boolean).map(x=>x[0]).join('').slice(0,2).toUpperCase();
 let tt;function toast(m){const t=$('#toast');t.textContent=m;t.hidden=false;clearTimeout(tt);tt=setTimeout(()=>t.hidden=true,2800)}
@@ -186,11 +206,14 @@ async function afterLogin(user){
   if(!ACC){gate('join',ME.name);return}
   if(ACC.status==='wait'){gate('wait');return}
   if(ACC.status==='off'){gate('off');return}
-  const want=Q.get('zu');
-  if(want&&APPS[want]&&appRole(ACC,want)&&!(want==='kabine'&&ACC.kabine==='tv'&&!ACC.is_admin)){location.replace(APPS[want].href);return}
+  await loadTeams();
+  const want=Q.get('zu'),wt=Q.get('team')||'km';
+  if(want==='kabine'){const r=kabRole(ACC,wt);if(r&&r!=='tv'&&TEAMS.some(t=>t.id===wt)){location.replace(kabHref(wt));return}}
+  else if(want&&APPS[want]&&appRole(ACC,want)){location.replace(APPS[want].href);return}
   if(ACC.is_admin)await loadRows();
   subscribe();ungate();render();
 }
+async function loadTeams(){try{const {data,error}=await sb.from('g_teams').select('*').order('sort').order('created_at');if(!error&&data&&data.length)TEAMS=data}catch(e){}}
 async function loadRows(){const {data,error}=await sb.from('g_access').select('*').order('created_at');if(!error)ROWS=data||[]}
 function subscribe(){
   if(chan)sb.removeChannel(chan);
@@ -198,8 +221,10 @@ function subscribe(){
     const r=pl.new&&pl.new.user_id?pl.new:pl.old;
     if(r&&r.user_id===ME.id&&pl.eventType!=='DELETE'){ACC=Object.assign({},ACC,pl.new)}
     if(ACC&&ACC.is_admin)await loadRows();
-    if(!$('#main').contains(document.activeElement)||document.activeElement.tagName!=='SELECT')render();
-  }).subscribe();
+    rerender();
+  }).on('postgres_changes',{event:'*',schema:'public',table:'g_teams'},async()=>{await loadTeams();rerender()}).subscribe();
+}
+function rerender(){const a=document.activeElement;if(!($('#main').contains(a)&&/SELECT|INPUT/.test(a.tagName)))render()
 }
 
 /* ---------- Ansichten ---------- */
@@ -207,38 +232,56 @@ function render(){
   $('#hbtn').innerHTML=`<button class="btn sm" data-act="logout">Abmelden</button>`;
   const first=(ACC.name||ME.name||pname(ACC)).split(' ')[0];
   const kein=Q.get('kein');
-  const tiles=['kabine','shotmap','kasse'].map(k=>{const r=appRole(ACC,k),A=APPS[k];if(!r||(k==='kabine'&&r==='tv'))return'';
-    return `<a class="tile ${A.cls}" href="${A.href}"><span class="ic">${A.ic}</span>${ACC.is_admin?'':`<span class="role chip">${(A.opts.find(o=>o[0]===r)||[])[1]}</span>`}<b>${A.n}</b><small>${A.d}</small></a>`}).join('');
-  const kr=appRole(ACC,'kabine');
-  const tv=kr?`<a class="tile t" href="tv/"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="2" y="5" width="20" height="13" rx="2"/><path d="M7 21h10"/></svg></span><b>Kabinen-TV</b><small>Für den Fernseher in der Kabine. Am Mini-PC öffnen und mit dem TV-Login anmelden.</small></a>`:'';
+  const chip=(r,opts)=>ACC.is_admin?'':`<span class="role chip">${(opts.find(o=>o[0]===r)||[])[1]}</span>`;
+  const kab=TEAMS.map(t=>{const r=kabRole(ACC,t.id),A=APPS.kabine;if(!r||r==='tv')return'';
+    return `<a class="tile ${A.cls}" href="${kabHref(t.id)}"><span class="ic">${A.ic}</span>${chip(r,A.opts)}${multi()?`<span class="tk">Gunners Kabine</span><b>${shy(esc(t.name))}</b>`:'<b>Gunners Kabine</b>'}<small>${A.d}</small></a>`}).join('');
+  const other=['shotmap','kasse'].map(k=>{const r=appRole(ACC,k),A=APPS[k];if(!r)return'';
+    return `<a class="tile ${A.cls}" href="${A.href}"><span class="ic">${A.ic}</span>${chip(r,A.opts)}<b>${shy(A.n)}</b><small>${A.d}</small></a>`}).join('');
+  const tiles=kab+other;
+  const tvT=TEAMS.filter(t=>kabRole(ACC,t.id));
+  const tvIc=`<span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="2" y="5" width="20" height="13" rx="2"/><path d="M7 21h10"/></svg></span>`;
+  const tv=!tvT.length?'':`<a class="tile t" href="tv/">${tvIc}<b>Kabinen-TV</b><small>Für den Fernseher in der Kabine. Am Mini-PC öffnen und mit dem TV-Login der Mannschaft anmelden. Der Login entscheidet, welche Kabine der Fernseher zeigt.</small></a>`;
+  const keinT=TEAMS.find(t=>t.id===(Q.get('team')||'km'));
+  const keinN=kein==='kabine'?(keinT?kabName(keinT):'die Kabine'):APPS[kein]&&APPS[kein].n;
   $('#main').innerHTML=`
   <section><div class="eyebrow">Gunners App</div><h2>Servus${first?' '+esc(first):''}!</h2></section>
-  ${kein&&APPS[kein]?`<div class="banner">Für <b>${APPS[kein].n}</b> bist du noch nicht freigeschaltet. Frag den Admin.</div>`:''}
+  ${kein&&keinN?`<div class="banner">Für <b>${esc(keinN)}</b> bist du noch nicht freigeschaltet. Frag den Admin.</div>`:''}
   ${tiles||tv?`<section class="tiles">${tiles}${tv}</section>`:'<div class="note">Du bist freigeschaltet, hast aber noch für keine App Rechte. Der Admin trägt sie dir ein.</div>'}
   ${ACC.is_admin?vAdmin():''}`;
 }
-function sel(r,k){const A=APPS[k],v=r[k]||'';return `<label>${A.n}<select data-r="${k}" data-id="${r.user_id}" class="${v?'on':''}" ${r.is_admin&&k!=='kabine'?'disabled':''}>${A.opts.map(([o,l])=>`<option value="${o}"${o===v?' selected':''}>${l}</option>`).join('')}</select></label>`}
+function sel(r,k){const A=APPS[k],v=r[k]||'';return `<label>${A.n}<select data-r="${k}" data-id="${r.user_id}" class="${v?'on':''}" ${r.is_admin?'disabled':''}>${A.opts.map(([o,l])=>`<option value="${o}"${o===v?' selected':''}>${l}</option>`).join('')}</select></label>`}
+function ksel(r,t){const v=(t.id==='km'?r.kabine:(r.teams||{})[t.id])||'';return `<label>${esc(kabName(t))}<select data-kt="${esc(t.id)}" data-id="${r.user_id}" class="${v?'on':''}" ${r.is_admin&&t.id!=='km'?'disabled':''}>${KOPTS(t.id).map(([o,l])=>`<option value="${o}"${o===v?' selected':''}>${l}</option>`).join('')}</select></label>`}
 function personRow(r){
   const me=r.user_id===ME.id,w=r.status==='wait';
   const chips=(r.is_admin?'<span class="chip acc">Admin</span> ':'')+(w?'<span class="chip wait">Wartet</span> ':'')+(r.status==='off'?'<span class="chip off">Gesperrt</span> ':'')+(me?'<span class="chip">Du</span>':'');
-  const tvOnly=r.kabine==='tv';
+  const tvOnly=isTvLogin(r);
   let acts='';
   if(me)acts='<span class="small muted">Deinen eigenen Zugang änderst du hier nicht.</span>';
   else if(w)acts=`<button class="btn primary sm" data-act="ok" data-id="${r.user_id}">Freischalten</button><button class="btn sm danger${arm==='no'+r.user_id?' armed':''}" data-act="no" data-id="${r.user_id}">${arm==='no'+r.user_id?'Wirklich ablehnen?':'Ablehnen'}</button>`;
   else if(r.status==='off')acts=`<button class="btn sm" data-act="on" data-id="${r.user_id}">Wieder freischalten</button><button class="btn sm danger${arm==='del'+r.user_id?' armed':''}" data-act="del" data-id="${r.user_id}">${arm==='del'+r.user_id?'Wirklich löschen?':'Löschen'}</button>`;
   else acts=`${tvOnly?'':`<label class="admt"><input type="checkbox" data-adm="${r.user_id}" ${r.is_admin?'checked':''}> Admin</label>`}<button class="btn sm danger${arm==='off'+r.user_id?' armed':''}" data-act="off" data-id="${r.user_id}">${arm==='off'+r.user_id?'Wirklich sperren?':'Sperren'}</button>`;
   return `<div class="prs${w?' w':''}"><span class="av">${esc(ini(r))}</span><div class="pi"><b>${esc(pname(r))}</b> ${chips}<small>${esc(r.email||'')}</small></div>
-  <div class="pact">${acts}</div>${me||r.status==='off'?'':`<div class="rights">${['kabine','shotmap','kasse'].map(k=>sel(r,k)).join('')}</div>`}</div>`;
+  <div class="pact">${acts}</div>${me||r.status==='off'?'':`<div class="rights">${TEAMS.map(t=>ksel(r,t)).join('')+(tvOnly?'':sel(r,'shotmap')+sel(r,'kasse'))}</div>`}</div>`;
 }
 function vAdmin(){
   const w=ROWS.filter(r=>r.status==='wait'),ok=ROWS.filter(r=>r.status==='ok'),off=ROWS.filter(r=>r.status==='off');
   return `<section class="adm" id="rechte"><div class="adm-h"><div><div class="eyebrow">Admin</div><h2>Personen und Rechte</h2></div><button class="btn sm" data-act="reload">Aktualisieren</button></div>
-  <div class="legend"><span><b>Kabine:</b> Ansehen = Aufstellung und Training sehen · Bearbeiten = alles planen · Nur TV-Gerät = Login für den Fernseher</span>
+  <div class="legend"><span><b>Kabine:</b> Ansehen = Aufstellung und Training sehen · Bearbeiten = alles planen · Nur TV-Gerät = Login für den Fernseher dieser Kabine (jeder Fernseher eigener Login)</span>
   <span><b>Shot Map:</b> Erfassen = Spiele anlegen und Schüsse eintragen</span><span><b>Kasse:</b> Verwalten = Strafen und Zahlungen buchen</span><span><b>Admin:</b> alle Apps und diese Rechteverwaltung</span></div>
   ${w.length?`<div class="sec"><h3>Warten auf Freischaltung (${w.length})</h3><div class="small muted">Rechte wählen, dann freischalten.</div><div class="plist">${w.map(personRow).join('')}</div></div>`:''}
   <div class="sec"><h3>Freigeschaltet (${ok.length})</h3><div class="plist">${ok.map(personRow).join('')}</div></div>
   ${off.length?`<div class="sec"><h3>Gesperrt (${off.length})</h3><div class="plist">${off.map(personRow).join('')}</div></div>`:''}
-  <div class="note">Neue Personen registrieren sich selbst über diese Seite und erscheinen dann oben unter „Warten auf Freischaltung“. Den TV-Login legst du in Supabase an (siehe Anleitung) und stellst ihn hier auf „Nur TV-Gerät“.</div></section>`;
+  ${vTeams()}
+  <div class="note">Neue Personen registrieren sich selbst über diese Seite und erscheinen dann oben unter „Warten auf Freischaltung“. Für jeden Fernseher legst du in Supabase einen eigenen Login an (siehe Anleitung) und stellst ihn hier in der Kabine seiner Mannschaft auf „Nur TV-Gerät“.</div></section>`;
+}
+
+function vTeams(){
+  const base=location.href.split('#')[0].split('?')[0].replace(/index\.html$/,'');
+  return `<div class="sec" id="mannschaften"><h3>Mannschaften</h3><div class="small muted">Jede Mannschaft hat ihre eigene Kabine mit eigenen Spielern, Spielen, Trainings und eigenem Fernseher. Shot Map und Kasse sind gemeinsam.</div>
+  <div class="plist">${TEAMS.map(t=>`<div class="team"><div class="tnames"><label class="field"><span>Name</span><input data-tname="${esc(t.id)}" value="${esc(t.name)}" maxlength="30"></label><label class="field"><span>Kurzname für „… vs Gegner“</span><input data-tshort="${esc(t.id)}" value="${esc(t.short||shortOf(t.name,t.id))}" maxlength="20"></label></div>
+    <div class="taddr"><span>Kabine</span><code>${esc(base+kabHref(t.id))}</code><span>Fernseher</span><code>${esc(base)}tv/</code><span>TV-Login</span><span>${(()=>{const l=ROWS.filter(r=>r.status==='ok'&&kabRole(r,t.id)==='tv');return l.length?l.map(r=>esc(r.email||pname(r))).join(', '):'noch keiner, siehe Anleitung'})()}</span></div>
+    ${t.id==='km'?'':`<button class="btn sm danger${arm==='tdel'+t.id?' armed':''}" data-act="tdel" data-id="${esc(t.id)}">${arm==='tdel'+t.id?'Wirklich löschen? Alle Spieler, Spiele und Trainings dieser Mannschaft gehen verloren.':'Mannschaft löschen'}</button>`}</div>`).join('')}</div>
+  <form id="tf" class="tadd"><label class="field"><span>Neue Mannschaft</span><input id="t-name" placeholder="z. B. EC Warriors Zirl oder U15" maxlength="30" required></label><button class="btn primary" type="submit">Hinzufügen</button></form></div>`;
 }
 
 /* ---------- Aktionen ---------- */
@@ -258,18 +301,32 @@ const A={
   no:async b=>{const id=b.dataset.id;if(arm!=='no'+id){arm='no'+id;render();return}arm=null;const {error}=await sb.from('g_access').delete().eq('user_id',id);if(error){toast(errMsg(error));return}ROWS=ROWS.filter(x=>x.user_id!==id);render();toast('Anfrage abgelehnt')},
   off:b=>{const id=b.dataset.id;if(arm!=='off'+id){arm='off'+id;render();return}arm=null;upd(id,{status:'off'},'Zugang gesperrt')},
   on:b=>upd(b.dataset.id,{status:'ok'},'Wieder freigeschaltet'),
+  tdel:async b=>{const id=b.dataset.id;if(arm!=='tdel'+id){arm='tdel'+id;render();return}arm=null;
+    const d=await sb.from('kb_docs').delete().eq('team',id);if(d.error){toast(errMsg(d.error));return}
+    const {error}=await sb.from('g_teams').delete().eq('id',id);if(error){toast(errMsg(error));return}
+    await loadTeams();render();toast('Mannschaft gelöscht')},
   del:async b=>{const id=b.dataset.id;if(arm!=='del'+id){arm='del'+id;render();return}arm=null;const {error}=await sb.from('g_access').delete().eq('user_id',id);if(error){toast(errMsg(error));return}ROWS=ROWS.filter(x=>x.user_id!==id);render();toast('Gelöscht')}
 };
-document.addEventListener('click',e=>{const b=e.target.closest('[data-act]');if(!b||b.disabled)return;const f=A[b.dataset.act];if(f){e.preventDefault();if(arm&&!b.dataset.act.match(/^(no|off|del)$/))arm=null;f(b)}});
+document.addEventListener('click',e=>{const b=e.target.closest('[data-act]');if(!b||b.disabled)return;const f=A[b.dataset.act];if(f){e.preventDefault();if(arm&&!b.dataset.act.match(/^(no|off|del|tdel)$/))arm=null;f(b)}});
 document.addEventListener('change',e=>{
   const el=e.target;
   if(el.dataset.r){const v=el.value||null,k=el.dataset.r,id=el.dataset.id,r=ROWS.find(x=>x.user_id===id);
     const patch={[k]:v};if(k==='kabine'&&v==='tv'){patch.shotmap=null;patch.kasse=null;patch.is_admin=false}
     upd(id,patch,`${pname(r)}: ${APPS[k].n} – ${(APPS[k].opts.find(o=>o[0]===(v||''))||[])[1]}`)}
+  if(el.dataset.kt){const t=el.dataset.kt,v=el.value||null,id=el.dataset.id,r=ROWS.find(x=>x.user_id===id),T=TEAMS.find(x=>x.id===t);let patch;
+    // Ein TV-Login zeigt genau eine Kabine: wird er für eine Mannschaft „Nur TV-Gerät“, verliert er alle anderen Rechte
+    if(v==='tv')patch={kabine:t==='km'?'tv':null,teams:t==='km'?{}:{[t]:'tv'},shotmap:null,kasse:null,is_admin:false};
+    else if(t==='km')patch={kabine:v};
+    else{const m=Object.assign({},r.teams||{});if(v)m[t]=v;else delete m[t];patch={teams:m}}
+    upd(id,patch,`${pname(r)}: ${kabName(T)} – ${(KOPTS(t).find(o=>o[0]===(v||''))||[])[1]}`)}
+  if(el.dataset.tshort){const id=el.dataset.tshort,n=el.value.trim();
+    sb.from('g_teams').update({short:n||null}).eq('id',id).then(async({error})=>{if(error)toast(errMsg(error));await loadTeams();render();if(!error)toast('Kurzname gespeichert')})}
+  if(el.dataset.tname){const id=el.dataset.tname,n=el.value.trim();if(!n){render();return}
+    sb.from('g_teams').update({name:n}).eq('id',id).then(async({error})=>{if(error)toast(errMsg(error));await loadTeams();render();if(!error)toast('Name gespeichert')})}
   if(el.dataset.adm){const id=el.dataset.adm,r=ROWS.find(x=>x.user_id===id);upd(id,{is_admin:el.checked},el.checked?`${pname(r)} ist jetzt Admin`:`${pname(r)} ist kein Admin mehr`)}
 });
 document.addEventListener('submit',async e=>{
-  const f=e.target;if(!['lf','rf','jf','nf'].includes(f.id))return;e.preventDefault();
+  const f=e.target;if(!['lf','rf','jf','nf','tf'].includes(f.id))return;e.preventDefault();
   const btn=f.querySelector('button[type=submit]');btn.disabled=true;
   try{
     if(f.id==='lf'){const {data,error}=await sb.auth.signInWithPassword({email:$('#l-mail').value.trim(),password:$('#l-pw').value});if(error){$('#l-err').className='gerr';$('#l-err').textContent=errMsg(error);return}afterLogin(data.user)}
@@ -278,6 +335,10 @@ document.addEventListener('submit',async e=>{
       if(!data.session){gate('login','✓ Fast geschafft: Bestätige deine E-Mail über den Link im Postfach und melde dich dann an.');return}
       const r=await sb.from('g_access').insert({user_id:data.user.id,email,name,status:'wait'});if(r.error&&!/duplicate/i.test(r.error.message)){$('#r-err').textContent=errMsg(r.error);return}gate('wait')}
     if(f.id==='jf'){const {data:{user}}=await sb.auth.getUser();const name=$('#j-name').value.trim();const r=await sb.from('g_access').insert({user_id:user.id,email:user.email,name,status:'wait'});if(r.error&&!/duplicate/i.test(r.error.message)){toast(errMsg(r.error));return}gate('wait')}
+    if(f.id==='tf'){const name=$('#t-name').value.trim();let id=slug(name);if(!id){toast('Bitte einen Namen mit Buchstaben oder Zahlen eingeben.');return}
+      if(id==='km'||TEAMS.some(t=>t.id===id)){let i=2;while(TEAMS.some(t=>t.id===id+'-'+i))i++;id=(id+'-'+i).slice(0,20)}
+      const {error}=await sb.from('g_teams').insert({id,name,short:shortOf(name,id),sort:Math.max(0,...TEAMS.map(t=>t.sort||0))+1});if(error){toast(errMsg(error));return}
+      await loadTeams();render();toast(`${name} angelegt. Jetzt bei den Personen die Rechte für die neue Kabine vergeben.`)}
     if(f.id==='nf'){const {error}=await sb.auth.updateUser({password:$('#n-pw').value});if(error){$('#n-err').textContent=errMsg(error);return}history.replaceState(null,'',location.pathname);const {data}=await sb.auth.getSession();if(data.session)afterLogin(data.session.user);else gate('login')}
   }finally{btn.disabled=false}
 });
