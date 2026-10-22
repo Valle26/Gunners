@@ -896,8 +896,8 @@ function normalize(){
 const synced=new Map();
 async function loadExt(){
   const before=JSON.stringify([EXT.kasse,EXT.sm]);
-  try{const {data,error}=await sb.rpc('kb_kasse');if(error)throw error;EXT.kasse=data||null;EXT.kErr=false}catch(e){EXT.kasse=null;EXT.kErr=true}
-  try{const {data,error}=await sb.from('sm_games').select('id,data');if(error)throw error;EXT.sm=(data||[]).map(r=>r.data).filter(Boolean);EXT.smErr=false}catch(e){EXT.sm=[];EXT.smErr=true}
+  try{const {data,error}=await sb.rpc('kb_kasse');if(error)throw error;EXT.kasse=data||null;EXT.kErr=false;EXT.kErrMsg=''}catch(e){EXT.kasse=null;EXT.kErr=true;EXT.kErrMsg=(e&&e.message)||''}
+  try{const {data,error}=await sb.from('sm_games').select('id,data');if(error)throw error;EXT.sm=(data||[]).map(r=>r.data&&Object.assign({id:r.id},r.data)).filter(Boolean);EXT.smErr=false;EXT.smErrMsg=''}catch(e){EXT.sm=[];EXT.smErr=true;EXT.smErrMsg=(e&&e.message)||''}
   return JSON.stringify([EXT.kasse,EXT.sm])!==before;
 }
 const rowsSig=rows=>rows.map(r=>r.key+'='+stable(r.data)).sort().join('\n');
@@ -1536,6 +1536,18 @@ function smCtl(e){
   return `<div class="smctl"><div class="sml2">Shot Map am TV: ${esc(g.home)} – ${esc(g.away)}${g.status==='live'?` <span class="chip live">live · ${smPl(g.period||1)}</span>`:''}</div><div class="chips">${opts.map(o=>`<button class="fchip" data-act="smShow" data-v="${o}" aria-pressed="${on&&sc===o}">${smScopeName(o)}</button>`).join('')}</div></div>`;
 }
 const isKM=()=>typeof TEAM==='undefined'||TEAM==='km';
+// Zustand der Verbindungen, direkt bei den Häkchen angezeigt
+function smNote(e){
+  if(EXT.smErr)return 'Shot Map nicht lesbar'+(EXT.smErrMsg?': '+EXT.smErrMsg:'');
+  if(!e||e.k!=='game')return `Bei Spielen mit verknüpftem Shot-Map-Spiel · ${smAll().length} Spiele in der Shot Map`;
+  const L=smLink(e.x);
+  return L.g?'Verknüpft: '+smLabel(L.g):L.mode==='none'?'Für dieses Spiel ausgeschaltet':L.mode==='many'?'Mehrere Spiele an diesem Tag: beim Spiel auswählen':L.mode==='gone'?'Gewähltes Shot-Map-Spiel gibt es nicht mehr':`Kein Shot-Map-Spiel am ${fmtDate(e.x.date)} mit „${US()}“ im Namen · beim Spiel auswählen`;
+}
+function kasseNote(){
+  if(EXT.kErr)return 'Kasse nicht lesbar'+(EXT.kErrMsg?': '+EXT.kErrMsg:'');
+  const k=KC();if(!k)return 'Keine Kassendaten gefunden';
+  return `Bei Trainings · verbunden: ${k.rows.length} Spieler, ${eur(k.open)} offen`;
+}
 function kasseSlides(){const c=tvc();return isKM()&&EXT.kasse&&c.ts.kasse!==false?[{k:'kasse',n:'Mannschaftskasse'}]:[]}
 function slidesFor(e){
   if(!e)return boardSlides();const c=tvc(),out=[];
@@ -1587,8 +1599,8 @@ function vTV(){
   </section>`:''}
   <div class="stagewrap" id="stagewrap"><div class="stage" id="stage"></div></div>
   <section class="card tvctl"><h3>Diashow einstellen</h3>
-    <div class="field"><span>Bei einem Spiel</span><div class="checks">${ck('gs','lines','Linien',c.gs.lines!==false)}${ck('gs','pp','Powerplay',c.gs.pp!==false)}${ck('gs','pk','Unterzahl',c.gs.pk!==false)}${ck('gs','shotmap','Shot Map',c.gs.shotmap!==false,false,EXT.smErr?'Noch nicht verbunden: SQL-Zusatz ausführen':'erscheint, sobald in der Shot Map ein Spiel läuft')}</div></div>
-    <div class="field"><span>Bei einem Training</span><div class="checks">${ck('ts','groups','Gruppen nach Farben',c.ts.groups!==false)}${ck('ts','drills','Übungen, jede auf einer eigenen Folie',c.ts.drills!==false)}${isKM()?ck('ts','kasse','Mannschaftskasse: offene Strafen und Rangliste',c.ts.kasse!==false,false,EXT.kErr?'Noch nicht verbunden':''):''}</div></div>
+    <div class="field"><span>Bei einem Spiel</span><div class="checks">${ck('gs','lines','Linien',c.gs.lines!==false)}${ck('gs','pp','Powerplay',c.gs.pp!==false)}${ck('gs','pk','Unterzahl',c.gs.pk!==false)}${ck('gs','shotmap','Shot Map',c.gs.shotmap!==false,false,smNote(e))}</div></div>
+    <div class="field"><span>Bei einem Training</span><div class="checks">${ck('ts','groups','Gruppen nach Farben',c.ts.groups!==false)}${ck('ts','drills','Übungen, jede auf einer eigenen Folie',c.ts.drills!==false)}${isKM()?ck('ts','kasse','Mannschaftskasse: offene Strafen und Rangliste',c.ts.kasse!==false,false,kasseNote()):''}</div></div>
     <div class="field"><span>Wechsel alle</span><div class="seg acc">${[10,15,20,30,60].map(v=>`<button data-act="sec" data-v="${v}" aria-pressed="${c.sec===v}">${v} s</button>`).join('')}</div></div>
     <button class="check" data-act="dx2" aria-pressed="${!!c.dx2}"><i></i><span>Übungsfolien doppelt so lange zeigen, damit man die Erklärung lesen kann</span></button>
     <div class="field"><span>Nach fester Anzeige automatisch zurück zur Diashow</span><div class="seg acc">${[[0,'Nie'],[15,'15 Min'],[30,'30 Min'],[60,'60 Min']].map(([v,l])=>`<button data-act="back" data-v="${v}" aria-pressed="${c.back===v}">${l}</button>`).join('')}</div></div>
