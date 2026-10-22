@@ -201,7 +201,6 @@ h3{font-family:var(--display);font-size:18px;margin:0;font-weight:600;letter-spa
 .tc .pp{width:calc(var(--th) * .8);height:100%;flex:none;background:#202126}
 .tc .pp .ini{font-size:calc(var(--th) * .26)}
 .tc .tt{min-width:0;padding-right:14px}
-.tc .tnr{flex:none;width:1.25em;text-align:center;font-family:var(--display);font-weight:700;color:var(--accent);font-size:calc(var(--th) * .4);line-height:.9;font-variant-numeric:tabular-nums;letter-spacing:-.03em;margin-left:calc(var(--th) * -.06)}
 .tc .ln{font-family:var(--display);font-weight:700;text-transform:uppercase;font-size:calc(var(--th) * .3);line-height:1;white-space:nowrap}
 .tc .fn{color:#b5b3ab;font-size:calc(var(--th) * .19);white-space:nowrap;margin-top:2px}
 .tvempty{color:#6e6c66;font-size:30px;padding:20px 4px}
@@ -490,9 +489,7 @@ html.mobon,html.mobon body{overflow:hidden}
 .mrow{display:flex;align-items:center;gap:10px;background:var(--surface-2);border-radius:9px;padding:4px 10px 4px 4px}
 .mrow .mp{width:36px;height:45px;border-radius:6px;overflow:hidden;flex:none}
 .mrow .mp .ini{font-size:12px}
-.mrow .mn{min-width:0;flex:1;font-size:15px;line-height:1.2}
-.mrow .mn b{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.mrow .mn small{display:block;color:var(--muted);font-size:13px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.mrow .mnr{flex:none;width:1.3em;font-family:var(--display);font-weight:700;color:var(--accent);font-size:28px;line-height:1;font-variant-numeric:tabular-nums;text-align:center}
+.mrow .mn{min-width:0;font-size:15px}
 .mrow .mn em{font-style:normal;font-family:var(--display);font-weight:700;color:var(--accent)}
 .mdr{border:1px solid var(--line);border-radius:14px;background:var(--surface);overflow:hidden}
 .mdh{display:flex;align-items:center;gap:12px;padding:12px 14px}
@@ -1384,7 +1381,7 @@ function tvUnits(g,t){
   return withGame(g,()=>gameHead(g,t==='PP'?'Powerplay':'Unterzahl')+
   `<div class="tvunits">${arr.map((u,i)=>`<div class="ur" style="--d:${(i*.4+.2).toFixed(2)}s"><div class="urn">${t}${i+1}</div><div class="kr">${FIELDS[t].map(f=>kc(`${t}.${i}.${f}`)).join('')}</div></div>`).join('')}</div>`);
 }
-function tcard(p,gk,r){const b=gk?'G':r?POSK[r]:'';return `<div class="tc${gk?' gk':''}"><div class="pp">${photo(p)}</div><span class="tnr">${esc(p.num||'')}</span><div class="tt"><div class="ln fit">${esc(p.last)}</div><div class="fn fit">${esc(p.first)}</div></div>${b?`<span class="gb gb-${gk?'G':r}">${b}</span>`:''}</div>`}
+function tcard(p,gk,r){const b=gk?'G':r?POSK[r]:'';return `<div class="tc${gk?' gk':''}"><div class="pp">${photo(p)}</div><div class="tt"><div class="ln fit">${p.num?`<em class="tnum">${esc(p.num)}</em>`:''}${esc(p.last)}</div><div class="fn fit">${esc(p.first)}</div></div>${b?`<span class="gb gb-${gk?'G':r}">${b}</span>`:''}</div>`}
 function tvCols(t){
   const cols=t.groups.map(g=>({c:GCOL[g.col],ids:fieldIds(g).sort((a,b)=>ROLEORD[trRole(t,a)]-ROLEORD[trRole(t,b)]),gk:[]})).filter(c=>c.ids.length);
   const gks=gkList(t);if(gks.length)cols.push({c:null,ids:[],gk:gks});
