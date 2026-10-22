@@ -692,10 +692,12 @@ body{cursor:none}body.active{cursor:auto}
 body.active .fsbtn{opacity:1;pointer-events:auto}
 .netst{position:fixed;left:16px;bottom:12px;z-index:5;background:rgba(239,91,95,.92);color:#fff;font-size:14px;font-weight:600;padding:6px 12px;border-radius:999px}
 .gate .gcard{max-width:460px}
+.pinnote{left:auto;right:16px;bottom:64px;background:rgba(20,21,24,.92);border:1px solid var(--accent);color:#f1efe8}
 </style>
 <div id="stagewrap" class="tvwrap"><div class="stage" id="stage"></div></div>
 <div id="gate" class="gate" hidden></div>
 <div id="netst" class="netst" hidden></div>
+<div id="pinnote" class="netst pinnote" hidden></div>
 <button id="fsbtn" class="btn fsbtn">Vollbild</button>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.117.2/dist/umd/supabase.js"></script>
 <script>
@@ -1560,6 +1562,20 @@ let idleT=null;
 function wakeUi(){document.body.classList.add('active');clearTimeout(idleT);idleT=setTimeout(()=>document.body.classList.remove('active'),3000)}
 ['mousemove','pointerdown','keydown'].forEach(ev=>addEventListener(ev,wakeUi));
 $('#fsbtn').onclick=()=>{const d=document.documentElement;try{(d.requestFullscreen||d.webkitRequestFullscreen).call(d)}catch(e){}};
+// Hinweis am Fernseher, wenn der Trainer eine Folie fest anzeigt, die hier nicht verfügbar ist
+function pinNote(){
+  const n=$('#pinnote');if(!n)return;const c=tvc(),e=tvEvent();
+  if(!USER||!e||!pinActive()||slidesFor(e).some(x=>x.k===c.pin)){n.hidden=true;return}
+  const why=c.pin==='shotmap'?smNote(e):c.pin==='kasse'?kasseNote():'';
+  n.hidden=false;n.textContent='Folie nicht verfügbar'+(why?': '+why:'');
+}
+setInterval(pinNote,3000);
+// Neue Version auf GitHub: der Fernseher lädt sich von selbst neu (alle 5 Minuten prüfen)
+const BUILD='aa3491114c';
+async function checkVersion(){
+  try{const r=await fetch(location.pathname+'?v='+Date.now(),{cache:'no-store'});if(!r.ok)return;const t=await r.text();const m=t.match(/const BUILD='([0-9a-f]{10})'/);if(m&&m[1]!==BUILD)location.reload()}catch(e){}
+}
+setInterval(checkVersion,5*60000);
 tvBoot();
 })();
 </script>
