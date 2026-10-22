@@ -197,12 +197,13 @@ h3{font-family:var(--display);font-size:18px;margin:0;font-weight:600;letter-spa
 .tg-h{display:flex;justify-content:space-between;align-items:center;border-radius:14px;padding:14px 22px;font-family:var(--display);font-weight:700;font-size:40px;line-height:1;letter-spacing:.08em;text-transform:uppercase}
 .tg-h small{font-size:26px;opacity:.75;letter-spacing:.04em}
 .tg-b{display:grid;gap:12px}
-.tc{display:flex;align-items:center;gap:16px;background:#16171a;border:1px solid #26272c;border-radius:12px;overflow:hidden;height:var(--th);min-width:0}
-.tc .pp{width:calc(var(--th) * .8);height:100%;flex:none;background:#202126}
+.tc{display:flex;align-items:center;gap:min(16px,calc(var(--tw,600px) * .035));background:#16171a;border:1px solid #26272c;border-radius:12px;overflow:hidden;height:var(--th);min-width:0}
+.tc .pp{width:min(calc(var(--th) * .8),calc(var(--tw,600px) * .24));height:100%;flex:none;background:#202126}
 .tc .pp .ini{font-size:calc(var(--th) * .26)}
-.tc .tt{min-width:0;padding-right:14px}
-.tc .ln{font-family:var(--display);font-weight:700;text-transform:uppercase;font-size:calc(var(--th) * .3);line-height:1;white-space:nowrap}
-.tc .fn{color:#b5b3ab;font-size:calc(var(--th) * .19);white-space:nowrap;margin-top:2px}
+.tc .tt{min-width:0;padding-right:min(14px,calc(var(--tw,600px) * .03))}
+.tc .tnr{flex:none;width:1.25em;text-align:center;font-family:var(--display);font-weight:700;color:var(--accent);font-size:min(calc(var(--th) * .4),calc(var(--tw,600px) * .13));line-height:.9;font-variant-numeric:tabular-nums;letter-spacing:-.03em;margin-left:calc(min(var(--th),var(--tw,600px) * .3) * -.06)}
+.tc .ln{font-family:var(--display);font-weight:700;text-transform:uppercase;font-size:min(calc(var(--th) * .3),calc(var(--tw,600px) * .1));line-height:1;white-space:nowrap}
+.tc .fn{color:#b5b3ab;font-size:min(calc(var(--th) * .19),calc(var(--tw,600px) * .065));white-space:nowrap;margin-top:2px}
 .tvempty{color:#6e6c66;font-size:30px;padding:20px 4px}
 
 /* Sheet */
@@ -259,7 +260,7 @@ input[type=range]{width:100%;accent-color:var(--accent)}
 .gkmini i{color:var(--accent)!important}
 .tvwhich{display:flex;flex-wrap:wrap;gap:4px 18px}
 .tc .tt{flex:1}
-.tc .gb{flex:none;margin-right:18px;font-family:var(--display);font-weight:700;color:var(--accent);font-size:calc(var(--th) * .26)}
+.tc .gb{flex:none;margin-right:min(18px,calc(var(--tw,600px) * .04));font-family:var(--display);font-weight:700;color:var(--accent);font-size:min(calc(var(--th) * .26),calc(var(--tw,600px) * .085))}
 .tc.gk{border-color:rgba(245,197,24,.45)}
 .tg-h.gkcol{background:transparent;border:3px solid var(--accent);color:var(--accent)}
 /* Start */
@@ -489,7 +490,9 @@ html.mobon,html.mobon body{overflow:hidden}
 .mrow{display:flex;align-items:center;gap:10px;background:var(--surface-2);border-radius:9px;padding:4px 10px 4px 4px}
 .mrow .mp{width:36px;height:45px;border-radius:6px;overflow:hidden;flex:none}
 .mrow .mp .ini{font-size:12px}
-.mrow .mn{min-width:0;font-size:15px}
+.mrow .mn{min-width:0;flex:1;font-size:15px;line-height:1.2}
+.mrow .mn b{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.mrow .mn small{display:block;color:var(--muted);font-size:13px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.mrow .mnr{flex:none;width:1.3em;font-family:var(--display);font-weight:700;color:var(--accent);font-size:28px;line-height:1;font-variant-numeric:tabular-nums;text-align:center}
 .mrow .mn em{font-style:normal;font-family:var(--display);font-weight:700;color:var(--accent)}
 .mdr{border:1px solid var(--line);border-radius:14px;background:var(--surface);overflow:hidden}
 .mdh{display:flex;align-items:center;gap:12px;padding:12px 14px}
@@ -1381,7 +1384,7 @@ function tvUnits(g,t){
   return withGame(g,()=>gameHead(g,t==='PP'?'Powerplay':'Unterzahl')+
   `<div class="tvunits">${arr.map((u,i)=>`<div class="ur" style="--d:${(i*.4+.2).toFixed(2)}s"><div class="urn">${t}${i+1}</div><div class="kr">${FIELDS[t].map(f=>kc(`${t}.${i}.${f}`)).join('')}</div></div>`).join('')}</div>`);
 }
-function tcard(p,gk,r){const b=gk?'G':r?POSK[r]:'';return `<div class="tc${gk?' gk':''}"><div class="pp">${photo(p)}</div><div class="tt"><div class="ln fit">${p.num?`<em class="tnum">${esc(p.num)}</em>`:''}${esc(p.last)}</div><div class="fn fit">${esc(p.first)}</div></div>${b?`<span class="gb gb-${gk?'G':r}">${b}</span>`:''}</div>`}
+function tcard(p,gk,r){const b=gk?'G':r?POSK[r]:'';return `<div class="tc${gk?' gk':''}"><div class="pp">${photo(p)}</div><div class="tt"><div class="ln fit">${esc(p.last)}</div><div class="fn fit">${esc(p.first)}</div></div>${b?`<span class="gb gb-${gk?'G':r}">${b}</span>`:''}</div>`}
 function tvCols(t){
   const cols=t.groups.map(g=>({c:GCOL[g.col],ids:fieldIds(g).sort((a,b)=>ROLEORD[trRole(t,a)]-ROLEORD[trRole(t,b)]),gk:[]})).filter(c=>c.ids.length);
   const gks=gkList(t);if(gks.length)cols.push({c:null,ids:[],gk:gks});
@@ -1429,7 +1432,7 @@ function layoutStage(e,s){
     const t=e.x,cols=tvCols(t),n=cols.length,colW=(1776-(n-1)*26)/n,cc=colW>=520?2:1;
     const maxK=Math.max(1,...cols.map(c=>c.gk.length+c.ids.length)),r=Math.ceil(maxK/cc);
     const th=Math.max(44,Math.min(132,(avail-96-(r-1)*12)/r));
-    st.style.setProperty('--th',th+'px');
+    st.style.setProperty('--th',th+'px');st.style.setProperty('--tw',Math.floor(cc>1?(colW-12)/2:colW)+'px');
     st.querySelectorAll('.tg-b').forEach((b,i)=>b.style.gridTemplateColumns=`repeat(${cols[i]&&!cols[i].c?1:cc},minmax(0,1fr))`);
   }else if(s&&s.drill){
     const p=st.querySelector('.tdd');if(p){p.style.fontSize='';let fs=parseFloat(getComputedStyle(p).fontSize),i=0;const box=st.querySelector('.tdt');while(box.scrollHeight>box.clientHeight+1&&fs>22&&i<40){fs-=1;p.style.fontSize=fs+'px';i++}}
