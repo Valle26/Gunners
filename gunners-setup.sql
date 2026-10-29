@@ -232,7 +232,8 @@ begin
     'catalog', coalesce((select jsonb_agg(jsonb_build_object('id', c->'id', 'type', c->'type', 'amount', c->'amount',
                                  'recurring', c->'recurring', 'startMonth', c->'startMonth'))
                          from jsonb_array_elements(coalesce(st->'catalog','[]'::jsonb)) c where c->>'type' = 'beitrag'), '[]'::jsonb),
-    'interest', st->'interest');
+    'interest', st->'interest',
+    'bank', st->'bank');
 end $$;
 revoke all on function public.kb_kasse() from public, anon;
 grant execute on function public.kb_kasse() to authenticated;

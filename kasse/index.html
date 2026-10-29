@@ -455,6 +455,21 @@
         <span style="font-weight:700; color:var(--muted)">€</span>
       </div>
     </div>
+    <div class="settings-item" id="restartRow" style="flex-direction:column; align-items:stretch">
+      <div><div class="t">Mitgliedsbeitrag neu starten</div><div class="d">Nach einer Pause: Der monatliche Beitrag und die Verzugszinsen beginnen ab dem gewählten Monat. Händisch gebuchte Beiträge aus dem Vormonat zählen als dieser Monat.</div></div>
+      <div style="display:flex; gap:8px; margin-top:10px; align-items:center">
+        <select id="restartMonth" style="flex:1; min-width:0; border:1px solid var(--line); background:var(--surface-2); color:var(--ink); border-radius:10px; padding:11px; font:inherit"></select>
+        <button class="pill pay" id="restartDo">Neu starten</button>
+      </div>
+      <div class="d" id="restartInfo" style="margin-top:8px"></div>
+    </div>
+    <div class="settings-item" style="flex-direction:column; align-items:stretch">
+      <div><div class="t">Bankverbindung für Einzahlungen</div><div class="d">Steht in den Nachrichten beim Teilen und als QR-Code auf der Kassen-Folie am Kabinen-TV.</div></div>
+      <input id="bankName" placeholder="Kontoinhaber, z. B. EC Gunners Zirl" autocomplete="off" style="margin-top:10px; border:1px solid var(--line); background:var(--surface-2); color:var(--ink); border-radius:10px; padding:11px; font:inherit">
+      <input id="bankIban" placeholder="IBAN" autocomplete="off" autocapitalize="characters" spellcheck="false" style="margin-top:8px; border:1px solid var(--line); background:var(--surface-2); color:var(--ink); border-radius:10px; padding:11px; font:inherit">
+      <input id="bankBic" placeholder="BIC (optional)" autocomplete="off" autocapitalize="characters" spellcheck="false" style="margin-top:8px; border:1px solid var(--line); background:var(--surface-2); color:var(--ink); border-radius:10px; padding:11px; font:inherit">
+      <div class="d" id="bankInfo" style="margin-top:6px"></div>
+    </div>
     <div class="settings-item" id="membersRow" style="display:none; flex-direction:column; align-items:stretch">
       <div><div class="t">Personen und Rechte</div><div class="d">Wer die Kasse verwalten darf, stellst du zentral auf der Gunners Startseite ein, zusammen mit Kabine und Shot Map.</div></div>
       <div class="list" id="membersList" style="display:none"></div>
@@ -604,7 +619,8 @@
     return {
       team: typeof d.team==="string" ? d.team : base.team,
       theme: d.theme || "auto",
-      interest: (function(){ var i=d.interest||{}; return {enabled: i.enabled!==false, perWeek: (typeof i.perWeek==="number"? i.perWeek : 1)}; })(),
+      interest: (function(){ var i=d.interest||{}; return {enabled: i.enabled!==false, perWeek: (typeof i.perWeek==="number"? i.perWeek : 1), since: (typeof i.since==="string"? i.since : "")}; })(),
+      bank: (function(){ var b=(d.bank&&typeof d.bank==="object")?d.bank:{}; return {name:String(b.name||""), iban:String(b.iban||""), bic:String(b.bic||"")}; })(),
       players: (Array.isArray(d.players)? d.players : []).map(function(p){ return {id:p.id||uid(), name:p.name, createdMonth:p.createdMonth||cm}; }),
       catalog: Array.isArray(d.catalog)? d.catalog : base.catalog,
       entries: Array.isArray(d.entries)? d.entries : []
@@ -681,8 +697,12 @@
   /* ---------- calculations ---------- */
   function isEuroDebt(t){ return t==="strafe" || t==="beitrag" || t==="getraenk"; }
   function endOfMonth(ts){ var d=new Date(ts); return new Date(d.getFullYear(), d.getMonth()+1, 0, 23,59,59,999).getTime(); }
+  function interestStart(){
+    var v = state.interest && state.interest.since; if(!v) return 0;
+    var p = v.split("-"); return new Date(+p[0], +p[1]-1, +(p[2]||1), 0, 0, 0, 0).getTime();
+  }
   function overdueWeeks(e){
-    var dl = endOfMonth(e.ts), now = Date.now();
+    var dl = Math.max(endOfMonth(e.ts), interestStart()-1), now = Date.now();
     if(now <= dl) return 0;
     return Math.ceil((now - dl)/604800000); // 1000*60*60*24*7
   }
@@ -792,7 +812,7 @@
     var c=null; state.catalog.forEach(function(x){ if(x.id===catId) c=x; });
     if(!c) return;
     if(c.recurring){ c.recurring=false; }
-    else { c.recurring=true; if(!c.startMonth) c.startMonth=curMonthKey(); }
+    else { c.recurring=true; c.startMonth=curMonthKey(); }
     var n = generateRecurring();
     save(); renderAll();
     toast(c.recurring ? (n>0 ? ("Monatlich aktiv · "+n+" gebucht") : "Monatlich aktiv") : "Monatlich aus");
@@ -1034,6 +1054,7 @@
         lines.push("Gesamt: "+kisten(beerTotal()));
       }
     }
+    if(euroOwing.length) lines = lines.concat(bankLines("Name + Mannschaftskasse"));
     $("#shareBox").value = lines.join("\n");
 
     var owing = state.players.map(function(p){ return {p:p, bal:balanceOf(p.id), beer:beerOf(p.id)}; })
@@ -1067,7 +1088,8 @@
     var eb=balanceOf(pid), bb=beerOf(pid);
     if(eb>0) lines.push("Summe: "+money(eb));
     if(bb>0) lines.push("Bier: "+kisten(bb));
-    lines.push("Bitte begleichen, danke! 🙌");
+    if(eb>0) lines = lines.concat(bankLines(p.name+" Mannschaftskasse"));
+    lines.push("", "Bitte begleichen, danke! 🙌");
     return lines.join("\n");
   }
   function copyText(t){
@@ -1356,10 +1378,54 @@
   }
   $("#btnSettings").addEventListener("click", function(){
     $("#backupBox").value = JSON.stringify(state);
-    syncInterestUI();
+    syncInterestUI(); syncRestartUI(); syncBankUI();
     if(isAdmin) loadMembers();
     showSheet("#settingsSheet");
   });
+  /* ---------- Neustart nach Pause ---------- */
+  function addMK(mk, n){ var p=mk.split("-"), y=+p[0], m=+p[1]+n; while(m>12){m-=12;y++;} while(m<1){m+=12;y--;} return y+"-"+String(m).padStart(2,"0"); }
+  function beitragItem(){ var list=state.catalog.filter(function(c){ return c.type==="beitrag"; }); return list.filter(function(c){ return c.recurring; })[0] || list[0] || null; }
+  function syncRestartUI(){
+    var sel=$("#restartMonth"), cur=curMonthKey(), keep=sel.value;
+    sel.innerHTML=[0,1,2,3].map(function(i){ var mk=addMK(cur,i); return '<option value="'+mk+'">ab '+monthLabel(mk)+'</option>'; }).join("");
+    sel.value = keep && sel.querySelector('option[value="'+keep+'"]') ? keep : addMK(cur,1);
+    var c=beitragItem(), since=state.interest && state.interest.since, info=[];
+    if(!c) info.push("Lege zuerst im Katalog unter Beitrag einen Mitgliedsbeitrag an.");
+    else info.push(c.recurring ? "Monatlich aktiv ab "+monthLabel(c.startMonth||cur) : "Monatlich derzeit aus");
+    if(since){ var p=since.split("-"); info.push("Verzugszinsen zählen ab "+new Date(+p[0],+p[1]-1,+p[2]).toLocaleDateString('de-AT',{day:'numeric',month:'long',year:'numeric'})); }
+    $("#restartInfo").textContent = info.join(" · ");
+  }
+  $("#restartDo").addEventListener("click", function(){
+    var c=beitragItem(); if(!c){ toast("Zuerst einen Mitgliedsbeitrag im Katalog anlegen"); return; }
+    var mk=$("#restartMonth").value, prev=addMK(mk,-1);
+    var manual=state.entries.filter(function(e){ return e.type==="beitrag" && !e.catalogId && monthKey(new Date(e.ts))===prev; });
+    var msg="Mitgliedsbeitrag "+monthLabel(mk)+" neu starten?\n\n• „"+c.label+"“ wird ab "+monthLabel(mk)+" monatlich für alle gebucht\n• Verzugszinsen zählen ab 1. "+monthLabel(mk)+" neu"+(manual.length?"\n• "+manual.length+" händisch gebuchte Beiträge aus "+monthLabel(prev)+" zählen als "+monthLabel(mk):"");
+    if(!confirm(msg)) return;
+    manual.forEach(function(e){ e.ts=monthTs(mk); e.monthKey=mk; e.catalogId=c.id; e.label=c.label+" · "+monthLabel(mk); });
+    c.recurring=true; c.startMonth=mk;
+    if(!state.interest) state.interest={enabled:true, perWeek:1};
+    state.interest.since = mk+"-01";
+    generateRecurring(); save(); renderAll(); syncRestartUI(); syncInterestUI();
+    toast("Neu gestartet ab "+monthLabel(mk)+(manual.length?" · "+manual.length+" Beiträge verschoben":""));
+  });
+  /* ---------- Bankverbindung ---------- */
+  function ibanClean(v){ return String(v||"").toUpperCase().replace(/[^A-Z0-9]/g,""); }
+  function ibanValid(v){ v=ibanClean(v); if(!/^[A-Z]{2}[0-9]{2}[A-Z0-9]{10,30}$/.test(v)) return false;
+    var r=(v.slice(4)+v.slice(0,4)).replace(/[A-Z]/g,function(ch){ return String(ch.charCodeAt(0)-55); }), m=0;
+    for(var i=0;i<r.length;i++){ m=(m*10+ +r[i])%97; } return m===1; }
+  function ibanFmt(v){ return ibanClean(v).replace(/(.{4})/g,"$1 ").trim(); }
+  function bankLines(ref){
+    var b=state.bank||{}; if(!b.iban) return [];
+    var l=["", "💳 Bitte überweisen an:"]; if(b.name) l.push(b.name); l.push("IBAN: "+ibanFmt(b.iban)); if(b.bic) l.push("BIC: "+b.bic);
+    if(ref) l.push("Verwendungszweck: "+ref); return l;
+  }
+  function syncBankUI(){ var b=state.bank||{}; $("#bankName").value=b.name||""; $("#bankIban").value=b.iban?ibanFmt(b.iban):""; $("#bankBic").value=b.bic||"";
+    $("#bankInfo").textContent = b.iban ? (ibanValid(b.iban) ? "✓ IBAN gültig" : "⚠ IBAN prüfen, die Prüfziffer stimmt nicht") : ""; }
+  ["bankName","bankIban","bankBic"].forEach(function(id){ $("#"+id).addEventListener("change", function(){
+    if(!state.bank) state.bank={name:"",iban:"",bic:""};
+    state.bank.name=$("#bankName").value.trim(); state.bank.iban=ibanClean($("#bankIban").value); state.bank.bic=ibanClean($("#bankBic").value);
+    save(); syncBankUI(); toast("Bankverbindung gespeichert");
+  }); });
   function syncInterestUI(){
     var on = !!(state.interest && state.interest.enabled);
     $("#intSwitch").classList.toggle("on", on);
