@@ -1249,8 +1249,11 @@ function kasseCalc(K){
     else if(e.type==='bier'&&!e.paid&&r)r.beer+=a;
     if(e.type==='strafe'&&r)r.fines+=a});
   const rows=Object.values(by);rows.forEach(r=>{r.p=kPlayer(r.name)});
-  const king=rows.slice().sort((a,b)=>b.fines-a.fines)[0];
-  return {rows,stand,open,king:king&&king.fines>0?king:null};
+  // Strafenkönig genau wie in der Kasse: Summe aller Strafen, bei Gleichstand gewinnt, wer zuerst so viel hatte
+  const fin={};let best=null,val=0;(K.entries||[]).forEach(e=>{if(e.type==='strafe'&&e.playerId)fin[e.playerId]=(fin[e.playerId]||0)+(+e.amount||0)});
+  Object.keys(fin).forEach(id=>{if(fin[id]>val){val=fin[id];best=id}});
+  const king=best&&by[best]?by[best]:null;
+  return {rows,stand,open,king:king&&val>0?Object.assign(king,{fines:val}):null};
 }
 const KC=()=>EXT.kasse?kasseCalc(EXT.kasse):null;
 const kAv=(r,cls)=>`<span class="${cls}">${r.p&&r.p.photo?`<img class="ph" src="${r.p.photo}" alt="">`:`<span class="ini">${esc(nrm(r.name).map(x=>x[0]).join('').slice(0,2).toUpperCase())}</span>`}</span>`;
@@ -1367,7 +1370,7 @@ function tvKasse(){
   const open=k.rows.filter(r=>r.open>0.004||r.beer>0).sort((a,b)=>b.open-a.open||b.beer-a.beer);
   const paid=k.rows.filter(r=>r.paid>0).sort((a,b)=>b.paid-a.paid);
   const n=open.length,cols=n>9?2:1,maxRows=11,show=open.slice(0,cols*maxRows),rowsN=Math.max(1,Math.ceil(show.length/cols));
-  const meta=`Kassastand ${eur(k.stand)} · offen gesamt ${eur(k.open)}${k.king?` · Strafenkönig: ${esc(k.king.p?k.king.p.first+' '+k.king.p.last:k.king.name)}`:''}`;
+  const meta=`Kassastand ${eur(k.stand)} · offen gesamt ${eur(k.open)}`;
   const top=paid.slice(0,3),rest=paid.slice(3,10),ord=[1,0,2].filter(i=>top[i]);
   const qr=kasseQR();
   return tvHead('Mannschaftskasse','Strafen und Rangliste',meta,qr?'':demoTag())+qr+
@@ -1591,7 +1594,7 @@ function pinNote(){
 }
 setInterval(pinNote,3000);
 // Neue Version auf GitHub: der Fernseher lädt sich von selbst neu (alle 5 Minuten prüfen)
-const BUILD='aa9cb1b210';
+const BUILD='b3ef86c79e';
 async function checkVersion(){
   try{const r=await fetch(location.pathname+'?v='+Date.now(),{cache:'no-store'});if(!r.ok)return;const t=await r.text();const m=t.match(/const BUILD='([0-9a-f]{10})'/);if(m&&m[1]!==BUILD)location.reload()}catch(e){}
 }
