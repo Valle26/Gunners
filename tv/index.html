@@ -286,6 +286,8 @@ input[type=range]{width:100%;accent-color:var(--accent)}
 .dpic{display:block;width:100%;aspect-ratio:16/10;max-width:100%;background:var(--surface-2);position:relative;overflow:hidden}
 .dimg{display:block;width:100%;height:100%;object-fit:contain;padding:6px}
 .dimg.foto{object-fit:cover;padding:0}
+/* Übungsbuch: Spielfeld-Skizzen ganz zeigen, nicht beschneiden */
+img.foto[src*="/uebungen/"]{object-fit:contain!important;padding:4px!important}
 .dnone{display:grid;place-items:center;width:100%;height:100%;color:var(--muted);font-size:13px}
 .dbody{display:grid;gap:3px;padding:10px 12px 12px}
 .dbody b{font-weight:600;line-height:1.25}
@@ -325,9 +327,10 @@ input[type=range]{width:100%;accent-color:var(--accent)}
 .tdi{background:#1d1e22;border:1px solid #26272c;border-radius:22px;overflow:hidden;min-height:0}
 .tdi img{display:block;width:100%;height:100%;object-fit:contain;padding:18px}
 .tdi img.foto{object-fit:cover;padding:0}
+.tdi img.foto[src*="/uebungen/"]{padding:22px!important}
 .tdt{min-height:0;overflow:hidden;display:flex;flex-direction:column;gap:22px}
 .tdh{font-family:var(--display);font-weight:700;letter-spacing:.16em;text-transform:uppercase;color:var(--accent);font-size:28px;line-height:1}
-.tdd{margin:0;font-size:42px;line-height:1.35;color:var(--fg)}
+.tdd{margin:0;font-size:42px;line-height:1.35;color:var(--fg);white-space:pre-line}
 .tdleg{display:flex;flex-wrap:wrap;gap:12px 26px;font-size:24px;color:#a6a49c;margin-top:auto}
 .tdleg span{display:inline-flex;align-items:center;gap:10px}
 .tdleg i{font-style:normal;width:34px;height:34px;border-radius:50%;display:grid;place-items:center;font-family:Arial,sans-serif;font-weight:700;font-size:18px}
@@ -501,7 +504,7 @@ html.mobon,html.mobon body{overflow:hidden}
 .mdh small{color:var(--muted);font-size:13px}
 .mdi{display:block;width:100%;aspect-ratio:16/10;object-fit:contain;background:#1d1e22;padding:8px}
 .mdi.foto{object-fit:cover;padding:0}
-.mdr p{margin:0;padding:12px 14px 14px;font-size:15px;line-height:1.5}
+.mdr p{margin:0;padding:12px 14px 14px;font-size:15px;line-height:1.5;white-space:pre-line}
 .rrow{cursor:default}
 .rrow .rn{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .rrow .rn em{font-style:normal;font-size:11px;color:var(--muted);margin-left:6px}
@@ -1594,7 +1597,7 @@ function pinNote(){
 }
 setInterval(pinNote,3000);
 // Neue Version auf GitHub: der Fernseher lädt sich von selbst neu (alle 5 Minuten prüfen)
-const BUILD='b3ef86c79e';
+const BUILD='8ee9bc025d';
 async function checkVersion(){
   try{const r=await fetch(location.pathname+'?v='+Date.now(),{cache:'no-store'});if(!r.ok)return;const t=await r.text();const m=t.match(/const BUILD='([0-9a-f]{10})'/);if(m&&m[1]!==BUILD)location.reload()}catch(e){}
 }
