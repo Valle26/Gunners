@@ -31,7 +31,7 @@ create table if not exists public.ig_docs (
   updated_at timestamptz not null default now(),
   updated_by uuid default auth.uid()
 );
--- Fotos pro Reiter (gameday, period, final, goal, mvp, lineup, sched)
+-- Fotos pro Reiter (gameday, period, final, goal, mvp, lineup, sched) und Gegner-Logos (logos)
 create table if not exists public.ig_photos (
   id         uuid primary key default gen_random_uuid(),
   tab        text not null check (tab in ('gameday','period','final','goal','mvp','lineup','sched')),
@@ -43,6 +43,11 @@ create table if not exists public.ig_photos (
   created_by uuid default auth.uid()
 );
 create unique index if not exists ig_photos_tab_url on public.ig_photos (tab, url);
+-- Fotos und Logos: Reiter „logos“ und Name (für Logos)
+alter table public.ig_photos add column if not exists name text;
+alter table public.ig_photos drop constraint if exists ig_photos_tab_check;
+alter table public.ig_photos add constraint ig_photos_tab_check check (tab in ('gameday','period','final','goal','mvp','lineup','sched','logos'));
+
 
 alter table public.ig_docs enable row level security;
 alter table public.ig_photos enable row level security;
@@ -151,6 +156,16 @@ insert into public.ig_photos (tab, url, w, h, created_at) values
   ('sched', 'import/07.jpg', 2048, 1363, to_timestamp(1793738527442/1000.0)),
   ('sched', 'import/08.jpg', 2048, 1363, to_timestamp(1793738578782/1000.0)),
   ('sched', 'import/09.jpg', 2048, 1363, to_timestamp(1793738579835/1000.0))
+on conflict (tab, url) do nothing;
+
+-- Gegner-Logos zum Auswählen (Dateien im Ordner instagram/import/logos)
+insert into public.ig_photos (tab, url, w, h, name) values
+  ('logos', 'import/logos/hc-kufstein.png', 900, 654, 'HC Kufstein'),
+  ('logos', 'import/logos/silz-bulls.png', 225, 225, 'Silz Bulls'),
+  ('logos', 'import/logos/ec-goetzens.png', 199, 74, 'EC Götzens'),
+  ('logos', 'import/logos/ec-ehrwald.png', 195, 184, 'EC Ehrwald'),
+  ('logos', 'import/logos/wsg-swarovski-wattens.png', 441, 353, 'WSG Swarovski Wattens'),
+  ('logos', 'import/logos/ehc-kundl.png', 511, 535, 'EHC Kundl')
 on conflict (tab, url) do nothing;
 
 -- 6. Spiel gegen den HC Kufstein am 8.11. (aus der Testseite) und das Dragons-Logo

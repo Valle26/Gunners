@@ -247,7 +247,7 @@ create table if not exists public.ig_docs (
   updated_at timestamptz not null default now(),
   updated_by uuid default auth.uid()
 );
--- Fotos pro Reiter (gameday, period, final, goal, mvp, lineup, sched)
+-- Fotos pro Reiter (gameday, period, final, goal, mvp, lineup, sched) und Gegner-Logos (logos)
 create table if not exists public.ig_photos (
   id         uuid primary key default gen_random_uuid(),
   tab        text not null check (tab in ('gameday','period','final','goal','mvp','lineup','sched')),
@@ -259,6 +259,11 @@ create table if not exists public.ig_photos (
   created_by uuid default auth.uid()
 );
 create unique index if not exists ig_photos_tab_url on public.ig_photos (tab, url);
+-- Fotos und Logos: Reiter „logos“ und Name (für Logos)
+alter table public.ig_photos add column if not exists name text;
+alter table public.ig_photos drop constraint if exists ig_photos_tab_check;
+alter table public.ig_photos add constraint ig_photos_tab_check check (tab in ('gameday','period','final','goal','mvp','lineup','sched','logos'));
+
 
 alter table public.ig_docs enable row level security;
 alter table public.ig_photos enable row level security;

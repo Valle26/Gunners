@@ -162,6 +162,12 @@ details[open] summary b::after{content:" ▴"}
 .gate img{width:96px;height:96px}
 .gate p{margin:0;color:var(--muted)}
 a.btn{text-decoration:none;color:inherit}
+.ph.lg{display:grid;grid-template-rows:minmax(0,1fr) auto;gap:3px;padding:7px 5px 5px;background:#141416}
+.ph.lg img{width:100%;height:100%;object-fit:contain;min-height:0}
+.ph.lg small{font-size:10.5px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%;font-family:var(--body);letter-spacing:0;font-weight:500}
+.ph.none.lg{font-size:22px;color:var(--fg)}
+.ph.add.lg{background:var(--surface)}
+.gbtns{display:grid;gap:6px;flex:none}
 </style>
 
 <div class="bar">
@@ -182,7 +188,12 @@ a.btn{text-decoration:none;color:inherit}
       <div class="libact" id="libAct" hidden></div>
       <input type="file" id="photoIn" accept="image/*" multiple hidden>
     </div>
-    <div class="up logo" id="upLogo"><label for="oppIn"><span class="th" id="thLogo"></span><span class="tx"><b>Logo <span id="lgName"></span></b><small id="smLogo"></small></span></label><button class="x" id="oppRm" aria-label="Logo entfernen" hidden>×</button><input type="file" id="oppIn" accept="image/*" hidden></div>
+    <div class="lib" id="upLogo">
+      <div class="libh"><b>Logo <span id="lgName"></span></b><span class="note" id="lgNote"></span></div>
+      <div class="strip" id="lstrip" role="listbox" aria-label="Gegner-Logos"></div>
+      <div class="libact" id="lAct" hidden></div>
+      <input type="file" id="oppIn" accept="image/*" hidden>
+    </div>
     <div class="seg" id="fmt"><button data-f="post" aria-pressed="true">Post 4:5</button><button data-f="story" aria-pressed="false">Story 9:16</button></div>
     <div class="live" id="live" hidden><span class="dot"></span><span id="liveTxt"></span><button id="liveLoad">Stand übernehmen</button></div>
     <button class="save" id="make">Bild speichern</button>
@@ -442,18 +453,21 @@ function smScore(g){const us=smUs(g),th=us==='H'?'A':'H',per=[1,2,3].map(p=>{con
 
 /* ---------- Spiele: Kabine, eigene Instagram-Spiele, nur Shot Map ---------- */
 function buildEntries(){
+  const hid=e=>!!(IG.notes[e.key]||{}).hidden;
   const k=KAB.games.filter(g=>g&&g.id&&!g.example).map(g=>({key:'k:'+g.id,src:'kabine',id:g.id,opp:g.opp||'',date:g.date||'',time:g.time||'',home:g.home!==false,venue:'',lines:g.lines||[],pairs:g.pairs||[],g1:g.g1||null,g2:g.g2||null,sm:g.sm}));
   const i=Object.entries(IG.games).map(([id,g])=>({key:'i:'+id,src:'ig',id,opp:g.opp||'',date:g.date||'',time:g.time||'',home:g.home!==false,venue:g.venue||'',lines:[],pairs:[],g1:null,g2:null,sm:g.sm}));
   const base=k.concat(i),used=new Set(base.map(e=>{const L=linkOf(e);return L.g&&L.g.id}).filter(Boolean));
   const s=smAll().filter(g=>!used.has(g.id)&&usRe().test((g.home||'')+' '+(g.away||''))).map(g=>{const us=smUs(g);return {key:'s:'+g.id,src:'shotmap',id:g.id,opp:us==='H'?g.away:g.home,date:g.date||'',time:g.time||'',home:us==='H',venue:g.venue||'',lines:[],pairs:[],g1:null,g2:null}});
-  ENTRIES=base.concat(s).sort((a,b)=>(a.date||'').localeCompare(b.date||'')||(a.time||'').localeCompare(b.time||''));
+  HIDDEN=base.concat(s).filter(hid).length;
+  ENTRIES=base.concat(s).filter(e=>!hid(e)||e.key===S.key&&false).sort((a,b)=>(a.date||'').localeCompare(b.date||'')||(a.time||'').localeCompare(b.time||''));
 }
+let HIDDEN=0;
 const entry=key=>ENTRIES.find(e=>e.key===key);
 const schedGames=()=>ENTRIES.filter(e=>e.src!=='shotmap'&&e.date>=today()).slice(0,3).map(e=>Object.assign({},e,eg(e)));
 const eg=e=>{const n=IG.notes[e.key]||{};return Object.assign({opp:e.opp,home:e.home,date:e.date,time:e.time},e.src==='ig'?{}:(n.g||{}))};
 function gameLabel(e){const g=eg(e),L=linkOf(e),sc=L.g&&smScore(L.g);return `${g.date===today()?'Heute':fmtD(g.date)} · ${g.home?'vs':'@'} ${shortOpp(g.opp)||'Gegner'}${sc?(sc.live?' · live':` · ${sc.us}:${sc.them}`):''}`}
 function renderGameSelect(){const el=$('#game');
-  el.innerHTML=ENTRIES.map(e=>`<option value="${esc(e.key)}">${esc(gameLabel(e))}${e.src==='shotmap'?' (nur Shot Map)':''}</option>`).join('')+`<option value="__new">＋ Neues Spiel anlegen</option>`;
+  el.innerHTML=ENTRIES.map(e=>`<option value="${esc(e.key)}">${esc(gameLabel(e))}${e.src==='shotmap'?' (nur Shot Map)':''}</option>`).join('')+`<option value="__new">＋ Neues Spiel anlegen</option>`+(HIDDEN?`<option value="__unhide">Ausgeblendete Spiele wieder zeigen (${HIDDEN})</option>`:'');
   if(S.key&&entry(S.key))el.value=S.key}
 
 /* ---------- Daten des gewählten Spiels ---------- */
@@ -562,9 +576,15 @@ function linkText(e){const L=linkOf(e);
 function renderGameCard(){const e=entry(S.key),c=$('#gcard');
   if(!e){c.innerHTML=`<div class="gi"><b>Noch kein Spiel</b><small>Leg ein Spiel an oder erstell es in der Kabine.</small></div><button class="btn sm" data-g="new">Neues Spiel</button>`;return}
   const g=eg(e),src=e.src==='kabine'?'aus der Kabine':e.src==='ig'?'eigenes Instagram-Spiel':'nur in der Shot Map';
-  c.innerHTML=`<div class="gi"><b>${g.home?'vs':'@'} ${esc(g.opp||'Gegner')}</b><small>${esc(g.date===today()?'Heute':fmtD(g.date))}${g.time?' · '+esc(g.time):''} · ${g.home?'Heimspiel':'Auswärts'} · ${src}</small><small class="${/warn/.test(linkText(e))?'':''}">${linkText(e)}</small></div><button class="btn sm" data-g="edit">${e.src==='ig'?'Bearbeiten':e.src==='kabine'?'Shot Map':'Neues Spiel'}</button>`}
-$('#gcard').addEventListener('click',e=>{const b=e.target.closest('[data-g]');if(!b)return;const en=entry(S.key);
-  if(b.dataset.g==='new'||(en&&en.src==='shotmap'))openGame(null,en&&en.src==='shotmap'?en:null);else openGame(en)});
+  c.innerHTML=`<div class="gi"><b>${g.home?'vs':'@'} ${esc(g.opp||'Gegner')}</b><small>${esc(g.date===today()?'Heute':fmtD(g.date))}${g.time?' · '+esc(g.time):''} · ${g.home?'Heimspiel':'Auswärts'} · ${src}</small><small>${linkText(e)}</small></div><div class="gbtns"><button class="btn sm" data-g="edit">${e.src==='ig'?'Bearbeiten':e.src==='kabine'?'Shot Map':'Als Spiel anlegen'}</button>${e.src==='ig'?`<button class="btn sm danger" data-g="del">${GDEL===e.key?'Wirklich löschen?':'Löschen'}</button>`:`<button class="btn sm" data-g="hide" title="Nur in Instagram ausblenden">Ausblenden</button>`}</div>`}
+let GDEL=null;
+$('#gcard').addEventListener('click',async e=>{const b=e.target.closest('[data-g]');if(!b)return;const en=entry(S.key),v=b.dataset.g;
+  if(v==='del'){if(GDEL!==en.key){GDEL=en.key;renderGameCard();return}GDEL=null;await deleteIgGame(en);return}
+  GDEL=null;
+  if(v==='hide'){patchNote({hidden:true});await flushNotes();S.key=null;refreshAll();toast('Spiel ausgeblendet. Über die Spielauswahl kannst du es wieder zeigen.');return}
+  if(v==='new'||(en&&en.src==='shotmap'))openGame(null,en&&en.src==='shotmap'?en:null);else openGame(en)});
+async function deleteIgGame(e){const {error}=await sb.from('ig_docs').delete().in('key',['game:'+e.id,noteKey(e.key)]);if(error){toast(errMsg(error));return false}
+  delete IG.games[e.id];delete IG.notes[e.key];S.key=null;refreshAll();toast('Spiel gelöscht');return true}
 let GS=null;
 function smOptions(date,val){const all=smAll(),same=all.filter(x=>x.date===date),other=all.filter(x=>x.date!==date).sort((a,b)=>String(b.date).localeCompare(String(a.date))).slice(0,40),c=smCand(date);
   const o=x=>`<option value="${esc(x.id)}"${val===x.id?' selected':''}>${esc(smLabel(x))}</option>`;
@@ -594,9 +614,9 @@ $('#gAct').addEventListener('click',async ev=>{const b=ev.target.closest('[data-
       b.disabled=true;IG.games[id]=g;const err=await saveIgGame(id,g);b.disabled=false;S.key='i:'+id}
     $('#gSheet').hidden=true;GS=null;refreshAll();toast(e?'Gespeichert':'Spiel angelegt')}
   if(b.dataset.ga==='del'){if(!GS.del){GS.del=true;b.textContent='Wirklich löschen?';return}
-    const {error}=await sb.from('ig_docs').delete().in('key',['game:'+e.id,noteKey(e.key)]);if(error){toast(errMsg(error));return}
-    delete IG.games[e.id];delete IG.notes[e.key];S.key=null;$('#gSheet').hidden=true;GS=null;refreshAll();toast('Spiel gelöscht')}});
-$('#game').addEventListener('change',e=>{const v=e.target.value;if(v==='__new'){renderGameSelect();openGame(null);return}saveView();S.key=v;try{localStorage.setItem('ig.game',v)}catch(x){}refreshGame()});
+    $('#gSheet').hidden=true;GS=null;await deleteIgGame(e)}});
+$('#game').addEventListener('change',async e=>{const v=e.target.value;if(v==='__new'){renderGameSelect();openGame(null);return}
+  if(v==='__unhide'){Object.keys(IG.notes).forEach(k=>{if(IG.notes[k].hidden){IG.notes[k]=Object.assign({},IG.notes[k],{hidden:false});noteDirty[k]=1}});await flushNotes();refreshAll();toast('Alle Spiele wieder sichtbar');return}saveView();S.key=v;try{localStorage.setItem('ig.game',v)}catch(x){}refreshGame()});
 
 /* ---------- Spieler (aus der Kabine der Kampfmannschaft) ---------- */
 const PL={ask:null,timers:{}};
@@ -666,31 +686,57 @@ $('#libAct').addEventListener('click',e=>{const a=e.target.closest('[data-act]')
   if(v==='del'){S.del=true;renderStrip()}else if(v==='delno'){S.del=false;renderStrip()}else if(v==='delyes'){S.del=false;deletePhoto(S.sel[S.tpl])}});
 $('#photoIn').onchange=e=>{addPhotos(e.target.files);e.target.value=''};
 
-/* ---------- Gegner-Logos (ig_docs logo:<gegner>) ---------- */
+/* ---------- Gegner-Logos: Sammlung (ig_photos, Reiter „logos“) und Zuordnung pro Gegner (ig_docs logo:<gegner>) ---------- */
+const LOGOS=()=>PHOTOS.filter(p=>p.tab==='logos').sort((a,b)=>(a.name||'').localeCompare(b.name||'','de'));
 const logoOf=opp=>IG.logos[slug(opp)];
-function applyLogos(){Object.entries(IG.logos).forEach(([k,l])=>{if(!l||!l.url)return;const cur=S.logos[k];if(cur&&cur.src===l.url)return;
-  loadImg(l.url).then(i=>{S.logos[k]={img:i,src:l.url};upUi();draw()},()=>{})});
-  Object.keys(S.logos).forEach(k=>{if(!IG.logos[k])delete S.logos[k]})}
-async function setLogoFile(file){if(!file||!/^image\//.test(file.type)){toast('Bitte ein Bild wählen (PNG oder JPG).');return}const opp=S.g.opp;if(!opp){toast('Zuerst einen Gegner eintragen.');return}
-  try{const {blob}=await shrink(file,900,'image/png');const old=logoOf(opp),path=`logos/${slug(opp)}-${Date.now()}.png`,url=await uploadBlob(blob,path,'image/png');
-    const data={opp,url,path};const {error}=await sb.from('ig_docs').upsert({key:'logo:'+slug(opp),data});if(error)throw error;
-    IG.logos[slug(opp)]=data;if(old&&old.path)sb.storage.from(BUCKET).remove([old.path]).catch(()=>{});
-    const i=await loadImg(url);S.logos[slug(opp)]={img:i,src:url};upUi();draw();toast(`Logo für ${shortOpp(opp)} gespeichert`)}
-  catch(e){toast('Logo nicht gespeichert: '+errMsg(e))}}
-async function removeLogo(){const opp=S.g.opp,l=logoOf(opp);delete S.logos[slug(opp)];upUi();draw();if(!l)return;
-  const {error}=await sb.from('ig_docs').delete().eq('key','logo:'+slug(opp));if(error){toast(errMsg(error));return}delete IG.logos[slug(opp)];if(l.path)sb.storage.from(BUCKET).remove([l.path]).catch(()=>{})}
-const curLogo=()=>{const l=S.logos[slug(S.g.opp)];return l&&l.src};
-const ICON_LOGO='<svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3 4 6v6c0 4.5 3.4 8 8 9 4.6-1 8-4.5 8-9V6z"/></svg>';
-function upUi(){
-  const lg=curLogo();$('#thLogo').innerHTML=lg?`<img src="${esc(lg)}" alt="">`:ICON_LOGO;$('#upLogo').classList.toggle('set',!!lg);$('#oppRm').hidden=!lg;
-  $('#lgName').textContent=shortOpp(S.g.opp)||'Gegner';$('#smLogo').textContent=lg?'Tippen zum Ändern · gilt für alle Spiele gegen diesen Gegner':'Tippen zum Hochladen · wird pro Gegner gespeichert';
-  $('#zoomRow').hidden=!S.photo;$('#zoomHint').hidden=!S.photo;$('#stage').classList.toggle('hasphoto',!!S.photo)}
-$('#oppIn').onchange=e=>{setLogoFile(e.target.files[0]);e.target.value=''};
-$('#oppRm').onclick=removeLogo;
+const words=n=>String(n||'').toLowerCase().replace(/ä/g,'ae').replace(/ö/g,'oe').replace(/ü/g,'ue').normalize('NFKD').replace(/[̀-ͯ]/g,'').split(/[^a-z0-9]+/).filter(w=>w.length>2&&!/^(ec|ehc|hc|sc|ev|sv|ek|ehv|esv|usv|uec|tsv|wsg|club|team|eishockey|eishockeyclub|hockey|www|com)$/.test(w));
+function autoLogo(opp){const W=words(opp);if(!W.length)return null;return LOGOS().find(l=>words(l.name).some(w=>W.includes(w)))||null}
+// Logo für einen Gegner: fest gewählt, bewusst keines, oder automatisch nach dem Namen
+function logoState(opp){const a=logoOf(opp);if(a&&a.none)return {mode:'none',url:null};if(a&&a.url)return {mode:'set',url:a.url};const l=autoLogo(opp);return l?{mode:'auto',url:l.url}:{mode:'auto0',url:null}}
+const LIMG={};
+function ensureLogo(){const opp=S.g.opp,k=slug(opp),st=logoState(opp);
+  if(!st.url){delete S.logos[k];upUi();draw();return}
+  if(S.logos[k]&&S.logos[k].src===st.url){upUi();return}
+  const done=i=>{if(slug(S.g.opp)!==k)return;S.logos[k]={img:i,src:st.url};upUi();draw()};
+  if(LIMG[st.url])done(LIMG[st.url]);else loadImg(st.url).then(i=>{LIMG[st.url]=i;done(i)},()=>{})}
+async function assignLogo(opp,data){IG.logos[slug(opp)]=data;ensureLogo();renderLogos();
+  const {error}=await sb.from('ig_docs').upsert({key:'logo:'+slug(opp),data});if(error)toast('Logo nicht gespeichert: '+errMsg(error))}
+let lbusy=0,LDEL=null;
+async function addLogo(file){if(!file||!/^image\//.test(file.type)){toast('Bitte ein Bild wählen (PNG oder JPG).');return}const opp=S.g.opp;
+  lbusy++;renderLogos();
+  try{const {blob,w,h}=await shrink(file,900,'image/png');const path=`logos/${slug(opp||'logo')}-${Date.now()}.png`,url=await uploadBlob(blob,path,'image/png');
+    const {data,error}=await sb.from('ig_photos').insert({tab:'logos',url,path,w,h,name:opp||'Logo'}).select().single();if(error)throw error;
+    if(!PHOTOS.some(p=>p.id===data.id))PHOTOS.unshift(data);
+    if(opp){await assignLogo(opp,{opp,url,photo:data.id});toast(`Logo für ${shortOpp(opp)} gespeichert`)}else toast('Logo gespeichert')}
+  catch(e){toast('Logo nicht gespeichert: '+errMsg(e))}
+  lbusy--;renderLogos()}
+async function deleteLogo(id){const p=PHOTOS.find(x=>x.id===id);LDEL=null;if(!p)return;
+  const {error}=await sb.from('ig_photos').delete().eq('id',id);if(error){toast(errMsg(error));return}
+  PHOTOS=PHOTOS.filter(x=>x.id!==id);
+  const gone=Object.entries(IG.logos).filter(([k,v])=>v&&v.url===p.url).map(([k])=>k);
+  if(gone.length){await sb.from('ig_docs').delete().in('key',gone.map(k=>'logo:'+k));gone.forEach(k=>delete IG.logos[k])}
+  if(p.path&&!PHOTOS.some(x=>x.path===p.path))sb.storage.from(BUCKET).remove([p.path]).catch(()=>{});
+  ensureLogo();renderLogos();toast('Logo gelöscht')}
+const initials=n=>(String(n||'').replace(/[^A-Za-zÄÖÜäöü ]/g,'').split(/\s+/).filter(Boolean).map(w=>w[0]).join('').slice(0,3).toUpperCase())||'?';
+function renderLogos(){const opp=S.g.opp,st=logoState(opp),list=LOGOS();
+  $('#lgName').textContent=shortOpp(opp)||'Gegner';
+  $('#lgNote').textContent=st.mode==='auto'?'automatisch nach dem Namen':st.mode==='set'?'gilt für alle Spiele gegen sie':st.mode==='none'?'ohne Logo':'wählen oder hochladen';
+  $('#lstrip').innerHTML=[`<label class="ph add lg" for="oppIn"><div><span>+</span>Logo<br>hochladen</div></label>`,
+    `<button class="ph none lg" role="option" data-lid="" aria-selected="${!st.url}"><span>${esc(initials(S.g.oppShort||opp))}</span><small>ohne Logo</small></button>`]
+    .concat(Array.from({length:lbusy},()=>'<div class="ph busy lg" aria-label="Wird hochgeladen"></div>'))
+    .concat(list.map(l=>`<button class="ph lg" role="option" data-lid="${esc(l.id)}" aria-selected="${st.url===l.url}" title="${esc(l.name||'')}"><img src="${esc(l.url)}" alt="${esc(l.name||'Logo')}" loading="lazy"><small>${esc(shortOpp(l.name)||'Logo')}</small></button>`)).join('');
+  const cur=list.find(l=>l.url===st.url),act=$('#lAct');
+  if(cur){act.hidden=false;act.innerHTML=LDEL===cur.id?`Logo „${esc(cur.name||'')}“ ganz löschen? <button class="lnk danger" data-la="yes">Ja, löschen</button><button class="lnk" data-la="no">Nein</button>`:`<button class="lnk" data-la="del" data-id="${esc(cur.id)}">Dieses Logo löschen</button>`}else act.hidden=true}
+$('#lstrip').addEventListener('click',e=>{const b=e.target.closest('[data-lid]');if(!b)return;const opp=S.g.opp;if(!opp){toast('Zuerst einen Gegner eintragen.');return}LDEL=null;
+  const id=b.dataset.lid;if(!id){assignLogo(opp,{opp,none:true});return}const l=PHOTOS.find(p=>p.id===id);if(l)assignLogo(opp,{opp,url:l.url,photo:l.id})});
+$('#lAct').addEventListener('click',e=>{const a=e.target.closest('[data-la]');if(!a)return;const v=a.dataset.la;
+  if(v==='del'){LDEL=a.dataset.id;renderLogos()}else if(v==='no'){LDEL=null;renderLogos()}else if(v==='yes')deleteLogo(LDEL)});
+$('#oppIn').onchange=e=>{addLogo(e.target.files[0]);e.target.value=''};
+function upUi(){$('#zoomRow').hidden=!S.photo;$('#zoomHint').hidden=!S.photo;$('#stage').classList.toggle('hasphoto',!!S.photo)}
 document.addEventListener('dragover',e=>{e.preventDefault();document.body.classList.add('drop-on')});
 document.addEventListener('dragleave',e=>{if(!e.relatedTarget)document.body.classList.remove('drop-on')});
 document.addEventListener('drop',e=>{e.preventDefault();document.body.classList.remove('drop-on');const fs=e.dataTransfer&&e.dataTransfer.files;if(!fs||!fs.length)return;
-  if(e.target.closest&&e.target.closest('#upLogo'))setLogoFile(fs[0]);else addPhotos(fs)});
+  if(e.target.closest&&e.target.closest('#upLogo'))addLogo(fs[0]);else addPhotos(fs)});
 
 // Foto frei verschieben und skalieren: ziehen, Mausrad, zwei Finger
 function clampPhoto(){const i=imgs.photo;if(!i)return;const r=Math.max(W/i.width,H/i.height)*S.zoom,w=i.width*r,h=i.height*r,mx=(W+w)/2-80,my=(H+h)/2-80;
@@ -746,8 +792,8 @@ function applyIg(key,data){const i=key.indexOf(':'),k=key.slice(0,i),id=key.slic
   if(k==='game'){if(data)IG.games[id]=data;else delete IG.games[id]}
   if(k==='note'){if(data&&data.game){if(noteDirty[data.game])return;IG.notes[data.game]=data}else{const g=Object.keys(IG.notes).find(x=>noteKey(x)===key);if(g&&!data)delete IG.notes[g]}}
   if(k==='logo'){if(data)IG.logos[id]=data;else delete IG.logos[id]}}
-function refreshGame(){try{if(S.key)localStorage.setItem('ig.game',S.key)}catch(e){}derive();renderGameSelect();renderGameCard();renderFields();upUi();draw()}
-function refreshAll(){setRoster();buildEntries();if(!S.key||!entry(S.key))S.key=pickDefault();refreshGame();applyLogos();renderStrip()}
+function refreshGame(){try{if(S.key)localStorage.setItem('ig.game',S.key)}catch(e){}derive();renderGameSelect();renderGameCard();renderFields();ensureLogo();renderLogos();upUi();draw()}
+function refreshAll(){setRoster();buildEntries();if(!S.key||!entry(S.key))S.key=pickDefault();refreshGame();renderStrip()}
 function pickDefault(){const t=today(),up=ENTRIES.filter(e=>e.src!=='shotmap');
   return ((ENTRIES.find(e=>e.date===t&&e.src!=='shotmap')||ENTRIES.find(e=>e.date===t)||up.find(e=>e.date>t)||ENTRIES[ENTRIES.length-1])||{}).key||null}
 let rt=null;
@@ -755,7 +801,7 @@ function scheduleRefresh(){clearTimeout(rt);rt=setTimeout(()=>{const a=document.
 function subscribe(){
   sb.channel('ig-live')
     .on('postgres_changes',{event:'*',schema:'public',table:'ig_docs'},pl=>{const r=pl.new&&pl.new.key?pl.new:pl.old;if(!r||!r.key)return;applyIg(r.key,pl.eventType==='DELETE'?null:pl.new.data);scheduleRefresh()})
-    .on('postgres_changes',{event:'*',schema:'public',table:'ig_photos'},pl=>{if(pl.eventType==='DELETE'){PHOTOS=PHOTOS.filter(p=>p.id!==(pl.old&&pl.old.id))}else if(pl.new&&!PHOTOS.some(p=>p.id===pl.new.id))PHOTOS.unshift(pl.new);renderStrip()})
+    .on('postgres_changes',{event:'*',schema:'public',table:'ig_photos'},pl=>{if(pl.eventType==='DELETE'){PHOTOS=PHOTOS.filter(p=>p.id!==(pl.old&&pl.old.id))}else if(pl.new&&!PHOTOS.some(p=>p.id===pl.new.id))PHOTOS.unshift(pl.new);renderStrip();ensureLogo();renderLogos()})
     .on('postgres_changes',{event:'*',schema:'public',table:'kb_docs',filter:'team=eq.km'},pl=>{const r=pl.new&&pl.new.key?pl.new:pl.old;if(!r||!/^(player|game):/.test(r.key||''))return;
       const id=r.key.slice(r.key.indexOf(':')+1),arr=r.key.startsWith('player:')?KAB.players:KAB.games,i=arr.findIndex(x=>x.id===id);
       if(pl.eventType==='DELETE'){if(i>=0)arr.splice(i,1)}else if(i>=0)arr[i]=pl.new.data;else arr.push(pl.new.data);scheduleRefresh()})
