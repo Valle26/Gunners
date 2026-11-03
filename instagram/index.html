@@ -284,10 +284,14 @@ function header(){ // kein Kopf mehr: liefert nur die Oberkante für den freien 
 const BOT=()=>H-(S.fmt==='story'?250:76),B_=BOT;
 
 /* ---------- Vorlagen ---------- */
-function matchupRow(y,d){ // unser Wappen / Gegner
-  const x0=64;crest(imgs.badge,x0,y,d);
+// Heimmannschaft immer links: bei Auswärtsspielen steht der Gegner vorne
+const HA=(us,them)=>S.g.home!==false?[us,them]:[them,us];
+const hp=([u,t])=>HA(u,t).join(':');
+const ourCrest=(x,y,d)=>crest(imgs.badge,x,y,d);
+function matchupRow(y,d){ // Heim / Gast
+  const x0=64,[L,Rr]=HA(ourCrest,oppCrest);L(x0,y,d);
   ctx.save();ctx.strokeStyle=C.y;ctx.lineWidth=6;ctx.beginPath();ctx.moveTo(x0+d+52,y+d+6);ctx.lineTo(x0+d+92,y-6);ctx.stroke();ctx.restore();
-  oppCrest(x0+d+144,y,d);return x0+2*d+144;
+  Rr(x0+d+144,y,d);return x0+2*d+144;
 }
 function T_gameday(){
   const hb=header(),B=BOT();
@@ -303,13 +307,14 @@ function T_gameday(){
 }
 function scoreRow(y,us,them,box){ // Wappen | Kasten | Kasten | Wappen, wie im bisherigen Endresultat
   const cw=150,gap=26,total=cw*2+box*2+gap*3+40,x=(W-total)/2;
-  crest(imgs.badge,x,y+(box-cw)/2,cw);
+  const [cL,cR]=HA(ourCrest,oppCrest),[vL,vR]=HA(us,them),[nL,nR]=HA(US.toUpperCase(),THEM().toUpperCase());
+  cL(x,y+(box-cw)/2,cw);
   const bx1=x+cw+gap,bx2=bx1+box+40+gap;
-  [[bx1,us],[bx2,them]].forEach(([bx,v])=>{ctx.fillStyle=C.w;ctx.fillRect(bx,y,box,box);txt(String(v),bx+box/2,y+box*.8,{w:800,s:box*.86,c:C.ink,a:'center'})});
+  [[bx1,vL],[bx2,vR]].forEach(([bx,v])=>{ctx.fillStyle=C.w;ctx.fillRect(bx,y,box,box);txt(String(v),bx+box/2,y+box*.8,{w:800,s:box*.86,c:C.ink,a:'center'})});
   txt(':',bx1+box+gap/2+20,y+box*.68,{w:800,s:box*.6,c:C.y,a:'center'});
-  oppCrest(bx2+box+gap,y+(box-cw)/2,cw);
-  txt(US.toUpperCase(),bx1+box/2,y+box+46,{w:700,s:30,ls:3,a:'center',c:'rgba(244,242,234,.8)'});
-  txt(THEM().toUpperCase(),bx2+box/2,y+box+46,{w:700,s:30,ls:3,a:'center',c:'rgba(244,242,234,.8)',max:box+120});
+  cR(bx2+box+gap,y+(box-cw)/2,cw);
+  txt(nL,bx1+box/2,y+box+46,{w:700,s:30,ls:3,a:'center',c:'rgba(244,242,234,.8)',max:box+120});
+  txt(nR,bx2+box/2,y+box+46,{w:700,s:30,ls:3,a:'center',c:'rgba(244,242,234,.8)',max:box+120});
 }
 function statStrip(y,cols){ // Zahlenleiste unten
   const n=cols.length,w=(W-128)/n;ctx.fillStyle='rgba(244,242,234,.08)';ctx.fillRect(64,y,W-128,120);
@@ -320,7 +325,7 @@ const sumShots=n=>S.score.shots.slice(0,n).reduce((a,[u,t])=>[a[0]+u,a[1]+t],[0,
 function T_period(){
   const hb=header(),B=BOT(),st=S.score.state,n=st==='p1'?1:st==='p2'?2:3;
   const sh=sumShots(n);
-  const cols=[['Schüsse aufs Tor',`${sh[0]}:${sh[1]}`]].concat(S.score.per.slice(0,n).map((p,i)=>[`${i+1}. Drittel`,`${p[0]}:${p[1]}`]));
+  const cols=[['Schüsse aufs Tor',hp(sh)]].concat(S.score.per.slice(0,n).map((p,i)=>[`${i+1}. Drittel`,hp(p)]));
   statStrip(B-120,cols);
   const box=200,sy=B-120-90-box-46;scoreRow(sy,S.score.us,S.score.them,box);
   const tY=sy-56;txt(`NACH DEM ${n}. DRITTEL`,W/2,tY,{w:800,s:118,a:'center',max:W-110});
@@ -338,7 +343,7 @@ function drawGoals(y0){const L=goalList(),two=L.length>3,cw=two?(W-128-40)/2:W-1
 function T_final(){
   const hb=header(),B=BOT(),u=+S.score.us,t=+S.score.them;
   const sh=sumShots(3);
-  const cols=[['Schüsse aufs Tor',`${sh[0]}:${sh[1]}`]].concat(S.score.per.map((p,i)=>[`${i+1}. Drittel`,`${p[0]}:${p[1]}`]));
+  const cols=[['Schüsse aufs Tor',hp(sh)]].concat(S.score.per.map((p,i)=>[`${i+1}. Drittel`,hp(p)]));
   const gh=goalsH();let y=B-120-gh;
   if(gh)drawGoals(B-gh+20);
   statStrip(y,cols);
@@ -353,7 +358,7 @@ function T_goal(){
   // Leiste: Zeit und Stand
   ctx.fillStyle='rgba(244,242,234,.08)';ctx.fillRect(64,B-96,W-128,96);
   txt(`${G.time?G.time+' · ':''}${G.period==='4'?'OVERTIME':G.period+'. DRITTEL'}`,96,B-34,{w:700,s:36,ls:2});
-  txt(`${US.toUpperCase()} ${S.score.us}:${S.score.them} ${THEM().toUpperCase()}`,W-96,B-34,{w:800,s:40,a:'right',c:C.y,max:520});
+  txt(`${HA(US.toUpperCase(),THEM().toUpperCase())[0]} ${hp([S.score.us,S.score.them])} ${HA(US.toUpperCase(),THEM().toUpperCase())[1]}`,W-96,B-34,{w:800,s:40,a:'right',c:C.y,max:520});
   // Spieler
   let py=B-96-46;
   if(G.assist){txt('ASSIST: '+G.assist.toUpperCase(),64,py,{w:600,s:30,c:C.g,ls:2,max:W-128});py-=62}
@@ -369,7 +374,7 @@ function T_mvp(){
   // Statistik als Chips
   const g=+M.g||0,a=+M.a||0,parts=[g?`${g} ${g>1?'Tore':'Tor'}`:'',a?`${a} ${a>1?'Assists':'Assist'}`:''].filter(Boolean);let x=64;const cy=B-86;
   parts.forEach(p=>{const t=p.toUpperCase(),w=measure(t,{w:700,s:32,ls:2})+44;ctx.save();ctx.strokeStyle=C.y;ctx.lineWidth=3;ctx.strokeRect(x,cy,w,72);ctx.restore();txt(t,x+22,cy+48,{w:700,s:32,ls:2});x+=w+14});
-  txt(`VS ${THEM().toUpperCase()}  ·  ${S.score.us}:${S.score.them}`,64,cy-38,{w:600,s:30,c:C.g,ls:3});
+  txt(`${HA(US.toUpperCase(),THEM().toUpperCase())[0]} ${hp([S.score.us,S.score.them])} ${HA(US.toUpperCase(),THEM().toUpperCase())[1]}`,64,cy-38,{w:600,s:30,c:C.g,ls:3});
   // Nummer groß als Kontur, Name davor
   const ny=cy-90;
   ctx.save();ctx.font=font(800,420);ctx.textAlign='right';ctx.lineWidth=4;ctx.strokeStyle='rgba(245,197,24,.55)';if(M.num)ctx.strokeText(M.num,W-40,ny-190);ctx.restore();
