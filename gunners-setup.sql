@@ -1,5 +1,5 @@
 -- =====================================================================
---  Gunners App – zentrale Rechte für Kabine, Shot Map und Kasse
+--  Gunners App – zentrale Rechte für Kabine, Shot Map, Kasse und Instagram
 --  Supabase -> SQL Editor -> New query -> alles einfügen -> Run
 --  Kann gefahrlos mehrmals ausgeführt werden.
 --  Beim ersten Mal werden bestehende Freischaltungen aus Kabine, Shot Map und Kasse übernommen.
@@ -21,6 +21,8 @@ create table if not exists public.g_access (
 );
 -- Rechte für weitere Mannschaften: {"u15":"edit","km2":"view"}. Die Kampfmannschaft steht in der Spalte kabine.
 alter table public.g_access add column if not exists teams jsonb not null default '{}'::jsonb;
+-- Recht für den Instagram-Bereich
+alter table public.g_access add column if not exists instagram text check (instagram in ('edit'));
 
 -- Mannschaften mit eigener Kabine (eigene Spieler, Spiele, Trainings, eigener Fernseher)
 create table if not exists public.g_teams (
@@ -45,7 +47,7 @@ create or replace function public.g_app(app text)
 returns text language sql stable security definer set search_path = public as $$
   select case when a.status <> 'ok' then null
               when a.is_admin then 'admin'
-              else case app when 'kabine' then a.kabine when 'shotmap' then a.shotmap when 'kasse' then a.kasse end end
+              else case app when 'kabine' then a.kabine when 'shotmap' then a.shotmap when 'kasse' then a.kasse when 'instagram' then a.instagram end end
   from public.g_access a where a.user_id = auth.uid()
 $$;
 -- Die Kabine fragt ihre Rolle über kb_role() ab: jetzt aus den zentralen Rechten
@@ -98,7 +100,7 @@ drop policy if exists g_delete on public.g_access;
 create policy g_read on public.g_access for select to authenticated
   using (user_id = auth.uid() or public.g_is_admin());
 create policy g_join on public.g_access for insert to authenticated
-  with check (user_id = auth.uid() and status = 'wait' and not is_admin and kabine is null and shotmap is null and kasse is null and teams = '{}'::jsonb);
+  with check (user_id = auth.uid() and status = 'wait' and not is_admin and kabine is null and shotmap is null and kasse is null and instagram is null and teams = '{}'::jsonb);
 create policy g_update on public.g_access for update to authenticated
   using (public.g_is_admin()) with check (public.g_is_admin());
 create policy g_delete on public.g_access for delete to authenticated
@@ -238,6 +240,68 @@ end $$;
 revoke all on function public.kb_kasse() from public, anon;
 grant execute on function public.kb_kasse() to authenticated;
 
--- 9. Kontrolle: alle Personen mit ihren Rechten
-select coalesce(name, email) as person, status, is_admin as admin, kabine, teams as weitere_mannschaften, shotmap, kasse
+-- 9. Instagram: Spiele, Einträge pro Spiel, Logos, Fotos pro Reiter pro Spiel (Torschützen, Spieler des Spiels …) und Gegner-Logos
+create table if not exists public.ig_docs (
+  key        text primary key check (key ~ '^(game|note|logo):[A-Za-z0-9_.-]{1,120}$'),
+  data       jsonb not null,
+  updated_at timestamptz not null default now(),
+  updated_by uuid default auth.uid()
+);
+-- Fotos pro Reiter (gameday, period, final, goal, mvp, lineup, sched)
+create table if not exists public.ig_photos (
+  id         uuid primary key default gen_random_uuid(),
+  tab        text not null check (tab in ('gameday','period','final','goal','mvp','lineup','sched')),
+  url        text not null,
+  path       text,
+  w          int,
+  h          int,
+  created_at timestamptz not null default now(),
+  created_by uuid default auth.uid()
+);
+create unique index if not exists ig_photos_tab_url on public.ig_photos (tab, url);
+
+alter table public.ig_docs enable row level security;
+alter table public.ig_photos enable row level security;
+drop policy if exists ig_docs_rw on public.ig_docs;
+drop policy if exists ig_photos_rw on public.ig_photos;
+create policy ig_docs_rw on public.ig_docs for all to authenticated
+  using (public.g_app('instagram') is not null) with check (public.g_app('instagram') is not null);
+create policy ig_photos_rw on public.ig_photos for all to authenticated
+  using (public.g_app('instagram') is not null) with check (public.g_app('instagram') is not null);
+do $$ begin alter publication supabase_realtime add table public.ig_docs; exception when duplicate_object then null; end $$;
+do $$ begin alter publication supabase_realtime add table public.ig_photos; exception when duplicate_object then null; end $$;
+
+-- 3. Speicher für Fotos und Logos (öffentlich lesbar wie die Kabinen-Fotos)
+insert into storage.buckets (id, name, public) values ('instagram', 'instagram', true) on conflict (id) do nothing;
+drop policy if exists ig_files_read on storage.objects;
+drop policy if exists ig_files_insert on storage.objects;
+drop policy if exists ig_files_update on storage.objects;
+drop policy if exists ig_files_delete on storage.objects;
+create policy ig_files_read on storage.objects for select to authenticated
+  using (bucket_id = 'instagram');
+create policy ig_files_insert on storage.objects for insert to authenticated
+  with check (bucket_id = 'instagram' and public.g_app('instagram') is not null);
+create policy ig_files_update on storage.objects for update to authenticated
+  using (bucket_id = 'instagram' and public.g_app('instagram') is not null);
+create policy ig_files_delete on storage.objects for delete to authenticated
+  using (bucket_id = 'instagram' and public.g_app('instagram') is not null);
+
+-- 4. Instagram liest Spieler und Spiele der Kampfmannschaft und die Shot Map
+do $$ begin
+  if to_regclass('public.kb_docs') is not null then
+    execute 'drop policy if exists kb_docs_ig_read on public.kb_docs';
+    execute $p$create policy kb_docs_ig_read on public.kb_docs for select to authenticated
+             using (team = 'km' and public.g_app('instagram') is not null)$p$;
+    begin execute 'alter publication supabase_realtime add table public.kb_docs'; exception when duplicate_object then null; end;
+  end if;
+  if to_regclass('public.sm_games') is not null then
+    execute 'drop policy if exists ig_sm_read on public.sm_games';
+    execute $p$create policy ig_sm_read on public.sm_games for select to authenticated
+             using (public.g_app('instagram') is not null)$p$;
+    begin execute 'alter publication supabase_realtime add table public.sm_games'; exception when duplicate_object then null; end;
+  end if;
+end $$;
+
+-- 10. Kontrolle: alle Personen mit ihren Rechten
+select coalesce(name, email) as person, status, is_admin as admin, kabine, teams as weitere_mannschaften, shotmap, kasse, instagram
 from public.g_access order by is_admin desc, status, created_at;

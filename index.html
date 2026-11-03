@@ -71,7 +71,7 @@ h3{font-family:var(--display);font-size:20px;margin:0;font-weight:600;letter-spa
 .tile .role{position:absolute;right:18px;top:20px}
 .tile.k{background:linear-gradient(160deg,#2a2410 0%,var(--surface) 55%)}
 .tile.k .ic{background:var(--accent);color:var(--on-accent)}
-.tile.s .ic{color:#ff8a8d}.tile.c .ic{color:var(--ok)}.tile.t .ic{color:var(--blue)}
+.tile.s .ic{color:#ff8a8d}.tile.c .ic{color:var(--ok)}.tile.i .ic{color:#e98bd8}.tile.t .ic{color:var(--blue)}
 .tile.t{min-height:120px}
 @media (max-width:600px){.tile{min-height:150px}}
 
@@ -142,7 +142,9 @@ const APPS={
   shotmap:{n:'Shot Map',d:'Schüsse und Tore live im Spiel erfassen, Statistik, Instagram-Bild',href:'shotmap/',cls:'s',opts:[['','Kein Zugriff'],['edit','Erfassen']],
     ic:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/></svg>'},
   kasse:{n:'Mannschaftskasse',d:'Strafen, Beiträge, Getränke und Rangliste',href:'kasse/',cls:'c',opts:[['','Kein Zugriff'],['edit','Verwalten']],
-    ic:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="6" width="18" height="13" rx="2"/><path d="M3 10h18M7 15h3"/></svg>'}
+    ic:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="6" width="18" height="13" rx="2"/><path d="M3 10h18M7 15h3"/></svg>'},
+  instagram:{n:'Instagram',d:'Fertige Bilder für Posts und Storys: Gameday, Drittelstand, Endstand, Tor, Line-up',href:'instagram/',cls:'i',opts:[['','Kein Zugriff'],['edit','Erstellen']],
+    ic:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.5" cy="6.5" r=".6" fill="currentColor"/></svg>'}
 };
 const RN={view:'Ansehen',edit:'Bearbeiten',tv:'TV-Gerät',admin:'Admin'};
 const appRole=(a,k)=>!a||a.status!=='ok'?null:a.is_admin?'admin':a[k]||null;
@@ -174,7 +176,7 @@ function gate(kind,msg){
   const g=$('#gate');g.hidden=false;
   const logo=`<img class="glogo" src="${LOGO}" alt="EC Gunners Zirl">`,out=`<button class="linkbtn" data-act="logout">Abmelden</button>`;
   const H={
-    login:`${logo}<h2>Gunners App</h2><p class="muted">Ein Login für Kabine, Shot Map und Kasse.</p>
+    login:`${logo}<h2>Gunners App</h2><p class="muted">Ein Login für Kabine, Shot Map, Kasse und Instagram.</p>
       <form id="lf" class="gform"><label class="field"><span>E-Mail</span><input id="l-mail" type="email" autocomplete="username" required></label>
       <label class="field"><span>Passwort</span><input id="l-pw" type="password" autocomplete="current-password" required></label>
       <div class="gerr${/^✓/.test(msg||'')?' gok':''}" id="l-err" role="alert">${esc(msg||'')}</div><button class="btn primary" type="submit">Anmelden</button></form>
@@ -235,7 +237,7 @@ function render(){
   const chip=(r,opts)=>ACC.is_admin?'':`<span class="role chip">${(opts.find(o=>o[0]===r)||[])[1]}</span>`;
   const kab=TEAMS.map(t=>{const r=kabRole(ACC,t.id),A=APPS.kabine;if(!r||r==='tv')return'';
     return `<a class="tile ${A.cls}" href="${kabHref(t.id)}"><span class="ic">${A.ic}</span>${chip(r,A.opts)}${multi()?`<span class="tk">Gunners Kabine</span><b>${shy(esc(t.name))}</b>`:'<b>Gunners Kabine</b>'}<small>${A.d}</small></a>`}).join('');
-  const other=['shotmap','kasse'].map(k=>{const r=appRole(ACC,k),A=APPS[k];if(!r)return'';
+  const other=['shotmap','kasse','instagram'].map(k=>{const r=appRole(ACC,k),A=APPS[k];if(!r)return'';
     return `<a class="tile ${A.cls}" href="${A.href}"><span class="ic">${A.ic}</span>${chip(r,A.opts)}<b>${shy(A.n)}</b><small>${A.d}</small></a>`}).join('');
   const tiles=kab+other;
   const tvT=TEAMS.filter(t=>kabRole(ACC,t.id));
@@ -261,13 +263,13 @@ function personRow(r){
   else if(r.status==='off')acts=`<button class="btn sm" data-act="on" data-id="${r.user_id}">Wieder freischalten</button><button class="btn sm danger${arm==='del'+r.user_id?' armed':''}" data-act="del" data-id="${r.user_id}">${arm==='del'+r.user_id?'Wirklich löschen?':'Löschen'}</button>`;
   else acts=`${tvOnly?'':`<label class="admt"><input type="checkbox" data-adm="${r.user_id}" ${r.is_admin?'checked':''}> Admin</label>`}<button class="btn sm danger${arm==='off'+r.user_id?' armed':''}" data-act="off" data-id="${r.user_id}">${arm==='off'+r.user_id?'Wirklich sperren?':'Sperren'}</button>`;
   return `<div class="prs${w?' w':''}"><span class="av">${esc(ini(r))}</span><div class="pi"><b>${esc(pname(r))}</b> ${chips}<small>${esc(r.email||'')}</small></div>
-  <div class="pact">${acts}</div>${me||r.status==='off'?'':`<div class="rights">${TEAMS.map(t=>ksel(r,t)).join('')+(tvOnly?'':sel(r,'shotmap')+sel(r,'kasse'))}</div>`}</div>`;
+  <div class="pact">${acts}</div>${me||r.status==='off'?'':`<div class="rights">${TEAMS.map(t=>ksel(r,t)).join('')+(tvOnly?'':sel(r,'shotmap')+sel(r,'kasse')+sel(r,'instagram'))}</div>`}</div>`;
 }
 function vAdmin(){
   const w=ROWS.filter(r=>r.status==='wait'),ok=ROWS.filter(r=>r.status==='ok'),off=ROWS.filter(r=>r.status==='off');
   return `<section class="adm" id="rechte"><div class="adm-h"><div><div class="eyebrow">Admin</div><h2>Personen und Rechte</h2></div><button class="btn sm" data-act="reload">Aktualisieren</button></div>
   <div class="legend"><span><b>Kabine:</b> Ansehen = Aufstellung und Training sehen · Bearbeiten = alles planen · Nur TV-Gerät = Login für den Fernseher dieser Kabine (jeder Fernseher eigener Login)</span>
-  <span><b>Shot Map:</b> Erfassen = Spiele anlegen und Schüsse eintragen</span><span><b>Kasse:</b> Verwalten = Strafen und Zahlungen buchen</span><span><b>Admin:</b> alle Apps und diese Rechteverwaltung</span></div>
+  <span><b>Shot Map:</b> Erfassen = Spiele anlegen und Schüsse eintragen</span><span><b>Kasse:</b> Verwalten = Strafen und Zahlungen buchen</span><span><b>Instagram:</b> Erstellen = Bilder für Instagram machen, Fotos und Gegner-Logos hochladen, eigene Spiele anlegen</span><span><b>Admin:</b> alle Apps und diese Rechteverwaltung</span></div>
   ${w.length?`<div class="sec"><h3>Warten auf Freischaltung (${w.length})</h3><div class="small muted">Rechte wählen, dann freischalten.</div><div class="plist">${w.map(personRow).join('')}</div></div>`:''}
   <div class="sec"><h3>Freigeschaltet (${ok.length})</h3><div class="plist">${ok.map(personRow).join('')}</div></div>
   ${off.length?`<div class="sec"><h3>Gesperrt (${off.length})</h3><div class="plist">${off.map(personRow).join('')}</div></div>`:''}
@@ -311,11 +313,11 @@ document.addEventListener('click',e=>{const b=e.target.closest('[data-act]');if(
 document.addEventListener('change',e=>{
   const el=e.target;
   if(el.dataset.r){const v=el.value||null,k=el.dataset.r,id=el.dataset.id,r=ROWS.find(x=>x.user_id===id);
-    const patch={[k]:v};if(k==='kabine'&&v==='tv'){patch.shotmap=null;patch.kasse=null;patch.is_admin=false}
+    const patch={[k]:v};if(k==='kabine'&&v==='tv'){patch.shotmap=null;patch.kasse=null;patch.instagram=null;patch.is_admin=false}
     upd(id,patch,`${pname(r)}: ${APPS[k].n} – ${(APPS[k].opts.find(o=>o[0]===(v||''))||[])[1]}`)}
   if(el.dataset.kt){const t=el.dataset.kt,v=el.value||null,id=el.dataset.id,r=ROWS.find(x=>x.user_id===id),T=TEAMS.find(x=>x.id===t);let patch;
     // Ein TV-Login zeigt genau eine Kabine: wird er für eine Mannschaft „Nur TV-Gerät“, verliert er alle anderen Rechte
-    if(v==='tv')patch={kabine:t==='km'?'tv':null,teams:t==='km'?{}:{[t]:'tv'},shotmap:null,kasse:null,is_admin:false};
+    if(v==='tv')patch={kabine:t==='km'?'tv':null,teams:t==='km'?{}:{[t]:'tv'},shotmap:null,kasse:null,instagram:null,is_admin:false};
     else if(t==='km')patch={kabine:v};
     else{const m=Object.assign({},r.teams||{});if(v)m[t]=v;else delete m[t];patch={teams:m}}
     upd(id,patch,`${pname(r)}: ${kabName(T)} – ${(KOPTS(t).find(o=>o[0]===(v||''))||[])[1]}`)}
