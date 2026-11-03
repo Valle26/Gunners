@@ -477,7 +477,7 @@ function renderGameSelect(){const el=$('#game');
 
 /* ---------- Daten des gewählten Spiels ---------- */
 function derive(){
-  const e=entry(S.key);if(!e){S.g={opp:'',oppShort:'',home:true,date:today(),time:'',venue:'',comp:''};SM=null;return}
+  const e=entry(S.key);if(!e){S.g={opp:'',oppShort:'',home:true,date:today(),time:'',venue:'',comp:''};SM=null;S.sel={};S.view={};return}
   const n=IG.notes[e.key]||{},L=linkOf(e);SM=L.g;const g=eg(e);
   S.g={opp:g.opp,oppShort:n.oppShort||shortOpp(g.opp),home:g.home,date:g.date,time:g.time,venue:(e.src==='ig'?e.venue:(n.g&&n.g.venue))||(SM&&SM.venue)||(g.home?'Eishalle Zirl':''),comp:''};
   const sm=SM?smScore(SM):null;
@@ -485,6 +485,7 @@ function derive(){
   else S.score={us:sm?sm.us:0,them:sm?sm.them:0,per:sm?sm.per:[[0,0],[0,0],[0,0]],shots:sm?sm.shots:[[0,0],[0,0],[0,0]],state:'p'+Math.min(2,sm?sm.period:1)};
   if(n.state)S.score.state=n.state;
   S.score.goals=(n.goals||[]).map(x=>Object.assign({},x));
+  S.sel=Object.assign({},n.sel||{});S.view=JSON.parse(JSON.stringify(n.view||{}));
   const lu=e.lines.map((l,i)=>[nameOnly(l.lw),nameOnly(l.c),nameOnly(l.rw),nameOnly(e.pairs[i]&&e.pairs[i].ld),nameOnly(e.pairs[i]&&e.pairs[i].rd)]).filter(r=>r.some(Boolean));
   S.lineup=n.lineup?n.lineup.map(r=>r.slice()):(lu.length?lu:[['','','','','']]);
   S.gk=n.gk!=null?n.gk:[e.g1,e.g2].filter(Boolean).map(nameOnly).join(' · ');
@@ -519,9 +520,9 @@ function renderTabs(){$('#tabs').innerHTML=TPL.map(t=>`<button class="tab" role=
 function renderFields(){
   const k=S.tpl,sc=S.score;let b='';const scoreNote=SM?'<p class="note wide">Der Stand kommt live aus der Shot Map. Änderst du ihn hier, gilt deine Eingabe, bis du oben „Stand übernehmen“ tippst.</p>':'';
   if(k==='gameday')b=gameFields(true);
-  if(k==='period'||k==='final'){b=SUB(k==='period'?'Stand':'Ergebnis')+scoreNote+(k==='period'?F('s-state','Pause nach',sc.state,{type:'select',opts:[['p1','1. Drittel'],['p2','2. Drittel']],wide:true}):'')+
+  if(k==='period'||k==='final'){b=SUB(k==='period'?'Stand':'Ergebnis')+scoreNote+(k==='period'?F('s-state','Pause nach',sc.state,{type:'select',opts:[['p1','1. Drittel'],['p2','2. Drittel'],['p3','3. Drittel']],wide:true}):'')+
       F('s-us','Tore '+US,sc.us,{type:'number'})+F('s-them','Tore Gegner',sc.them,{type:'number'})+
-      [0,1,2].slice(0,k==='period'?(sc.state==='p1'?1:2):3).map(i=>F('s-p'+i,`${i+1}. Drittel Tore`,sc.per[i].join(':'))+F('s-sh'+i,`${i+1}. Drittel Schüsse`,sc.shots[i].join(':'))).join('')+
+      [0,1,2].slice(0,k==='period'?(+String(sc.state).slice(1)||1):3).map(i=>F('s-p'+i,`${i+1}. Drittel Tore`,sc.per[i].join(':'))+F('s-sh'+i,`${i+1}. Drittel Schüsse`,sc.shots[i].join(':'))).join('')+
       (k==='final'?goalFields():'')+gameFields(false)}
   if(k==='goal'){const G=S.goal;b=SUB('Torschütze')+PS('o-pid','Torschütze',G.pid,false)+F('o-num','Nummer',pl(G.pid)?pl(G.pid).num:'',{type:'number'})+PS('o-a1','1. Assist',G.a1,true)+PS('o-a2','2. Assist',G.a2,true)+F('o-time','Spielzeit',G.time)+
       F('o-per','Drittel',G.period,{type:'select',opts:[['1','1. Drittel'],['2','2. Drittel'],['3','3. Drittel'],['4','Overtime']]})+F('s-us','Stand '+US,sc.us,{type:'number'})+F('s-them','Stand Gegner',sc.them,{type:'number'})+gameFields(false)}
@@ -569,7 +570,7 @@ $('#fields').addEventListener('click',e=>{const G=S.score.goals;
   if(e.target.closest('[data-ladd]')){S.lineup.push([]);patchNote({lineup:S.lineup});renderFields();draw()}
   if(e.target.closest('[data-ldel]')){S.lineup.pop();patchNote({lineup:S.lineup});renderFields();draw()}
   if(e.target.closest('[data-lreset]')){const n=Object.assign({},IG.notes[S.key]);delete n.lineup;delete n.gk;IG.notes[S.key]=n;noteDirty[S.key]=1;flushNotes();derive();renderFields();draw()}});
-$('#tabs').addEventListener('click',e=>{const t=e.target.closest('.tab');if(!t)return;saveView();S.tpl=t.dataset.t;renderTabs();renderFields();renderStrip();applySel();
+$('#tabs').addEventListener('click',e=>{const t=e.target.closest('.tab');if(!t)return;clearTimeout(vT);saveView();S.tpl=t.dataset.t;renderTabs();renderFields();renderStrip();applySel();
   const b=$(`.tab[data-t="${S.tpl}"]`);b&&b.scrollIntoView({block:'nearest',inline:'nearest',behavior:'smooth'})});
 $('#fmt').addEventListener('click',e=>{const f=e.target.closest('button');if(!f)return;S.fmt=f.dataset.f;document.querySelectorAll('#fmt button').forEach(b=>b.setAttribute('aria-pressed',b===f));draw();fit()});
 $('#liveLoad').onclick=()=>{const n=Object.assign({},IG.notes[S.key]);delete n.score;delete n.state;IG.notes[S.key]=n;noteDirty[S.key]=1;flushNotes();derive();renderFields();draw();toast('Stand aus der Shot Map übernommen')};
@@ -620,7 +621,7 @@ $('#gAct').addEventListener('click',async ev=>{const b=ev.target.closest('[data-
     $('#gSheet').hidden=true;GS=null;refreshAll();toast(e?'Gespeichert':'Spiel angelegt')}
   if(b.dataset.ga==='del'){if(!GS.del){GS.del=true;b.textContent='Wirklich löschen?';return}
     $('#gSheet').hidden=true;GS=null;await deleteIgGame(e)}});
-$('#game').addEventListener('change',async e=>{const v=e.target.value;if(v==='__new'){renderGameSelect();openGame(null);return}
+$('#game').addEventListener('change',async e=>{const v=e.target.value;clearTimeout(vT);saveView();if(v==='__new'){renderGameSelect();openGame(null);return}
   if(v==='__unhide'){Object.keys(IG.notes).forEach(k=>{if(IG.notes[k].hidden){IG.notes[k]=Object.assign({},IG.notes[k],{hidden:false});noteDirty[k]=1}});await flushNotes();refreshAll();toast('Alle Spiele wieder sichtbar');return}saveView();S.key=v;try{localStorage.setItem('ig.game',v)}catch(x){}refreshGame()});
 
 /* ---------- Spieler (aus der Kabine der Kampfmannschaft) ---------- */
@@ -666,10 +667,13 @@ async function addPhotos(files){files=[...files].filter(f=>/^image\//.test(f.typ
     busy--;renderStrip()}
   if(first&&S.tpl===tab)selectPhoto(first)}
 const photoUrl=p=>p.url;
-function selectPhoto(id){S.del=false;S.sel[S.tpl]=id||'';saveSel();applySel();renderStrip()}
-function saveSel(){try{localStorage.setItem('ig.sel',JSON.stringify(S.sel))}catch(e){}}
-function saveView(){S.view[S.tpl]={zoom:S.zoom,ox:S.ox,oy:S.oy,id:S.sel[S.tpl]}}
-function applySel(){const id=S.sel[S.tpl],p=id&&PHOTOS.find(x=>x.id===id);
+// Foto-Auswahl und Ausschnitt gelten pro Spiel und Reiter (gespeichert beim Spiel, note.sel / note.view)
+function selectPhoto(id){S.del=false;S.sel[S.tpl]=id||'';if(S.key)patchNote({sel:Object.assign({},S.sel)});applySel();renderStrip()}
+function saveView(){const id=S.sel[S.tpl];if(!id||!S.photo||!S.key)return;const v={zoom:+S.zoom.toFixed(3),ox:Math.round(S.ox),oy:Math.round(S.oy),id},o=S.view[S.tpl];
+  if(o&&o.id===v.id&&o.zoom===v.zoom&&o.ox===v.ox&&o.oy===v.oy)return;S.view[S.tpl]=v;patchNote({view:JSON.parse(JSON.stringify(S.view))})}
+let vT=null;const viewChanged=()=>{clearTimeout(vT);vT=setTimeout(saveView,400)};
+let shown='';
+function applySel(){const id=S.sel[S.tpl],p=id&&PHOTOS.find(x=>x.id===id);shown=S.key+'|'+S.tpl+'|'+(p?id:'');
   if(!p){S.photo=null;imgs.photo=null;upUi();draw();return}
   const v=S.view[S.tpl];const same=v&&v.id===id;
   loadImg(photoUrl(p)).then(i=>{if(S.sel[S.tpl]!==id)return;imgs.photo=i;S.photo=photoUrl(p);S.zoom=same?v.zoom:1;S.ox=same?v.ox:0;S.oy=same?v.oy:0;$('#zoom').value=S.zoom;upUi();draw()},()=>{toast('Das Foto konnte nicht geladen werden.');S.photo=null;imgs.photo=null;upUi();draw()})}
@@ -686,7 +690,7 @@ function renderStrip(){const list=tabPhotos(),sel=S.sel[S.tpl]||'';
     .concat(list.map(p=>`<button class="ph" role="option" data-pid="${esc(p.id)}" aria-selected="${sel===p.id}"><img src="${esc(photoUrl(p))}" alt="" loading="lazy"></button>`)).join('');
   const act=$('#libAct');if(sel&&list.some(p=>p.id===sel)){act.hidden=false;act.innerHTML=S.del?`Foto aus „${esc(tabName())}“ löschen? <button class="lnk danger" data-act="delyes">Ja, löschen</button><button class="lnk" data-act="delno">Nein</button>`:`<button class="lnk" data-act="del">Dieses Foto löschen</button>`}else act.hidden=true;
   $('#libNote').textContent=list.length?`${list.length} gespeichert`:'nur für diesen Reiter'}
-$('#strip').addEventListener('click',e=>{const b=e.target.closest('[data-pid]');if(b){saveView();selectPhoto(b.dataset.pid||null)}});
+$('#strip').addEventListener('click',e=>{const b=e.target.closest('[data-pid]');if(b){clearTimeout(vT);saveView();selectPhoto(b.dataset.pid||null)}});
 $('#libAct').addEventListener('click',e=>{const a=e.target.closest('[data-act]');if(!a)return;const v=a.dataset.act;
   if(v==='del'){S.del=true;renderStrip()}else if(v==='delno'){S.del=false;renderStrip()}else if(v==='delyes'){S.del=false;deletePhoto(S.sel[S.tpl])}});
 $('#photoIn').onchange=e=>{addPhotos(e.target.files);e.target.value=''};
@@ -747,9 +751,9 @@ document.addEventListener('drop',e=>{e.preventDefault();document.body.classList.
 function clampPhoto(){const i=imgs.photo;if(!i)return;const r=Math.max(W/i.width,H/i.height)*S.zoom,w=i.width*r,h=i.height*r,mx=(W+w)/2-80,my=(H+h)/2-80;
   S.ox=Math.max(-mx,Math.min(mx,S.ox));S.oy=Math.max(-my,Math.min(my,S.oy))}
 function setZoom(z,cx,cy){const z0=S.zoom;z=Math.max(.3,Math.min(3,z));if(cx!=null){const k=z/z0;S.ox=(S.ox-(cx-W/2))*k+(cx-W/2);S.oy=(S.oy-(cy-H/2))*k+(cy-H/2)}
-  S.zoom=z;$('#zoom').value=z;clampPhoto();draw()}
+  S.zoom=z;$('#zoom').value=z;clampPhoto();draw();viewChanged()}
 $('#zoom').oninput=e=>setZoom(+e.target.value);
-$('#zoomReset').onclick=()=>{S.zoom=1;S.ox=0;S.oy=0;$('#zoom').value=1;draw()};
+$('#zoomReset').onclick=()=>{S.zoom=1;S.ox=0;S.oy=0;$('#zoom').value=1;draw();viewChanged()};
 const ptrs=new Map();let drag=null;
 const toCanvas=e=>{const r=cv.getBoundingClientRect(),k=W/r.width;return [(e.clientX-r.left)*k,(e.clientY-r.top)*k]};
 function startGesture(){const P=[...ptrs.values()];if(P.length===1)drag={mode:'pan',x:P[0][0],y:P[0][1],ox:S.ox,oy:S.oy};
@@ -759,7 +763,7 @@ cv.addEventListener('pointermove',e=>{if(!drag||!ptrs.has(e.pointerId))return;pt
   if(drag.mode==='pan'&&P.length===1){S.ox=drag.ox+P[0][0]-drag.x;S.oy=drag.oy+P[0][1]-drag.y;clampPhoto();draw()}
   else if(drag.mode==='pinch'&&P.length>=2){const[a,b]=P,d=Math.hypot(a[0]-b[0],a[1]-b[1]),cx=(a[0]+b[0])/2,cy=(a[1]+b[1])/2;
     S.ox=drag.ox+cx-drag.cx;S.oy=drag.oy+cy-drag.cy;const z0=S.zoom;S.zoom=drag.z;setZoom(drag.z*d/drag.d,drag.cx+(cx-drag.cx),drag.cy+(cy-drag.cy));}});
-['pointerup','pointercancel'].forEach(ev=>cv.addEventListener(ev,e=>{ptrs.delete(e.pointerId);if(ptrs.size)startGesture();else drag=null}));
+['pointerup','pointercancel'].forEach(ev=>cv.addEventListener(ev,e=>{ptrs.delete(e.pointerId);if(ptrs.size)startGesture();else{if(drag)viewChanged();drag=null}}));
 cv.addEventListener('wheel',e=>{if(!S.photo)return;e.preventDefault();const[cx,cy]=toCanvas(e);setZoom(S.zoom*Math.exp(-e.deltaY*.0015),cx,cy)},{passive:false});
 
 /* ---------- Größe der Vorschau ---------- */
@@ -797,7 +801,8 @@ function applyIg(key,data){const i=key.indexOf(':'),k=key.slice(0,i),id=key.slic
   if(k==='game'){if(data)IG.games[id]=data;else delete IG.games[id]}
   if(k==='note'){if(data&&data.game){if(noteDirty[data.game])return;IG.notes[data.game]=data}else{const g=Object.keys(IG.notes).find(x=>noteKey(x)===key);if(g&&!data)delete IG.notes[g]}}
   if(k==='logo'){if(data)IG.logos[id]=data;else delete IG.logos[id]}}
-function refreshGame(){try{if(S.key)localStorage.setItem('ig.game',S.key)}catch(e){}derive();renderGameSelect();renderGameCard();renderFields();ensureLogo();renderLogos();upUi();draw()}
+function refreshGame(){try{if(S.key)localStorage.setItem('ig.game',S.key)}catch(e){}derive();renderGameSelect();renderGameCard();renderFields();ensureLogo();renderLogos();renderStrip();
+  const id=S.sel[S.tpl],want=S.key+'|'+S.tpl+'|'+(id&&PHOTOS.some(p=>p.id===id)?id:'');if(want!==shown)applySel();upUi();draw()}
 function refreshAll(){setRoster();buildEntries();if(!S.key||!entry(S.key))S.key=pickDefault();refreshGame();renderStrip()}
 function pickDefault(){const t=today(),up=ENTRIES.filter(e=>e.src!=='shotmap');
   return ((ENTRIES.find(e=>e.date===t&&e.src!=='shotmap')||ENTRIES.find(e=>e.date===t)||up.find(e=>e.date>t)||ENTRIES[ENTRIES.length-1])||{}).key||null}
@@ -832,11 +837,10 @@ async function boot(){
     CAN_KAB=!!(acc.is_admin||acc.kabine==='edit');
     await loadAll();
   }catch(e){gate('Laden hat nicht geklappt: '+errMsg(e),'<button class="btn primary" onclick="location.reload()">Nochmal versuchen</button> <a class="btn" href="../">Zur Startseite</a>');return}
-  try{S.sel=JSON.parse(localStorage.getItem('ig.sel')||'{}')||{}}catch(e){}
   let want=null;try{want=localStorage.getItem('ig.game')}catch(e){}
   setRoster();buildEntries();S.key=want&&entry(want)&&(entry(want).date>=today()||entry(want).src==='ig')?want:pickDefault();
   $('#gate').hidden=true;
-  refreshAll();applySel();subscribe();
+  refreshAll();subscribe();
 }
 boot();
 
