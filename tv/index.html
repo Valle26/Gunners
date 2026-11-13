@@ -113,7 +113,9 @@ h3{font-family:var(--display);font-size:18px;margin:0;font-weight:600;letter-spa
 .lnum small{display:block;font-size:10px;color:var(--muted);letter-spacing:.08em;text-transform:uppercase;font-weight:600}
 .slot{border:1px solid var(--line);background:var(--surface);border-radius:12px;padding:8px 6px 8px;display:grid;justify-items:center;gap:5px;min-width:0;text-align:center}
 .slot:hover{background:var(--surface-2)}
-.slot .sp{width:60px;height:75px;border-radius:8px;overflow:hidden}
+.slot .sp{position:relative;width:60px;height:75px;border-radius:8px;overflow:hidden}
+.slot .cap{position:absolute;right:3px;top:3px;width:20px;height:20px;border-radius:50%;background:var(--accent);color:#141208;font-family:var(--display);font-weight:800;font-style:normal;font-size:12px;line-height:20px;text-align:center}
+.leadg{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:10px}
 .slot .sp .ini{font-size:16px}
 .slot .sl{font-family:var(--display);font-size:11px;font-weight:700;letter-spacing:.08em;color:var(--accent)}
 .slot .sn{font-size:13px;line-height:1.2;font-weight:500;width:100%;overflow-wrap:anywhere}
@@ -360,6 +362,7 @@ img.foto[src*="/uebungen/"]{object-fit:contain!important;padding:4px!important}
 .kc{position:relative;width:var(--cw);flex:none;display:flex;flex-direction:column;background:#16171a;border:1px solid #2a2b30;border-radius:14px;overflow:hidden}
 .kc .kp{position:relative;width:100%;aspect-ratio:4/5;background:#202126}
 .kc .kp .ini{font-size:calc(var(--cw) * .28)}
+.kc .kcap{position:absolute;right:8px;top:8px;width:calc(var(--cw) * .2);height:calc(var(--cw) * .2);border-radius:50%;background:var(--accent);color:#141208;font-family:var(--display);font-weight:800;font-size:calc(var(--cw) * .12);display:grid;place-items:center;line-height:1;box-shadow:0 2px 8px rgba(0,0,0,.45)}
 .kc .kpos{position:absolute;left:8px;top:8px;background:rgba(10,11,13,.82);color:var(--accent);font-family:var(--display);font-weight:700;letter-spacing:.08em;font-size:calc(var(--cw) * .085);line-height:1;padding:5px 8px;border-radius:7px}
 .kc .kn{height:calc(var(--cw) * .4);display:flex;align-items:center;gap:calc(var(--cw) * .09);padding:0 calc(var(--cw) * .06);border-top:3px solid var(--accent);min-width:0}
 .kc .knr{flex:none;font-family:var(--display);font-weight:700;color:var(--accent);font-size:calc(var(--cw) * .22);line-height:.9;font-variant-numeric:tabular-nums;letter-spacing:-.02em}
@@ -484,6 +487,7 @@ html.mobon,html.mobon body{overflow:hidden}
 .mlb .kr{gap:10px}
 .mlb .kr.k4{--cw:calc((var(--mw) - 24px) / 4);gap:8px}
 .mlb .kc .kpos{font-size:10px;padding:3px 5px;left:5px;top:5px}
+.mlb .kc .kcap{right:5px;top:5px;width:22px;height:22px;font-size:13px}
 .mumb{position:relative;width:100%;aspect-ratio:85/100;--cw:calc(var(--mw) * .21)}
 .mumb .up{position:absolute;transform:translate(-50%,-50%)}
 .mgrp{border:1px solid var(--line);border-radius:14px;overflow:hidden;background:var(--surface)}
@@ -814,6 +818,12 @@ function diagSVG(key){
 /* ---------- Daten ---------- */
 const LINE=()=>({lw:null,c:null,rw:null}),PAIR=()=>({ld:null,rd:null}),PPU=()=>({pt:null,hl:null,hr:null,sl:null,nf:null}),PKU=()=>({f1:null,f2:null,d1:null,d2:null});
 function newGame(o){return Object.assign({id:'s'+uid(),opp:'',date:today(),time:'19:30',home:true,lines:[LINE(),LINE(),LINE()],pairs:[PAIR(),PAIR(),PAIR()],g1:null,g2:null,pp:[PPU(),PPU()],pk:[PKU(),PKU()]},o||{})}
+/* Captain & Assistenten pro Spiel. Ohne eigene Auswahl gilt der Standard. */
+const LEAD0=[['Kranebitter','Luca'],['Wenter','Thomas'],['Steiner','Jonas']];
+const lnorm=s=>String(s||'').trim().toLowerCase();
+const findName=(l,f)=>{const p=(S.players||[]).find(p=>lnorm(p.last)===l.toLowerCase()&&lnorm(p.first)===f.toLowerCase());return p?p.id:null};
+function leadOf(g){if(g&&g.cap!==undefined)return {c:g.cap||null,a:[(g.alt||[])[0]||null,(g.alt||[])[1]||null]};const [c,a1,a2]=LEAD0.map(([l,f])=>findName(l,f));return {c,a:[a1,a2]}}
+const roleOf=(g,id)=>{if(!id||!g)return'';const L=leadOf(g);return L.c===id?'C':L.a.includes(id)?'A':''};
 function newTraining(o){return Object.assign({id:'t'+uid(),date:today(),time:'20:00',topic:'',groups:[{col:'gelb',ids:[]},{col:'schwarz',ids:[]}],gks:[],drills:[],roles:{}},o||{})}
 const stdDrills=()=>STD_DRILLS.map(([k,n,c,m,d])=>({id:'d-'+k,name:n,cat:c,min:m,desc:d,diag:k,photo:null}));
 const TVC0=()=>({mode:'show',pin:null,sec:15,back:30,at:0,ev:null,gs:{lines:true,pp:true,pk:true},ts:{groups:true,drills:true,kasse:true},smScope:'all',dx2:true});
@@ -1206,7 +1216,8 @@ function kc(k,nolab){
   const pos=k==='g1'?'Goalie':k==='g2'?'Backup':SLOTNAME[k.split('.')[2]];
   const lab=nolab?'':`<span class="kpos">${pos}</span>`;
   if(!p)return `<div class="kc empty"><div class="kp">${lab}</div><div class="kn"></div></div>`;
-  return `<div class="kc${k==='g2'?' dim':''}"><div class="kp">${photo(p)}${lab}</div><div class="kn">${p.num?`<span class="knr">${esc(p.num)}</span>`:''}<div class="knm"><div class="kl fit">${esc(p.last)}</div><div class="kf">${esc(p.first)}</div></div></div></div>`;
+  const cr=roleOf(SG(),p.id);
+  return `<div class="kc${k==='g2'?' dim':''}"><div class="kp">${photo(p)}${lab}${cr?`<span class="kcap">${cr}</span>`:''}</div><div class="kn">${p.num?`<span class="knr">${esc(p.num)}</span>`:''}<div class="knm"><div class="kl fit">${esc(p.last)}</div><div class="kf">${esc(p.first)}</div></div></div></div>`;
 }
 /* ---------- QR-Code (qrcode-generator, MIT) für die Überweisung am Kabinen-TV ---------- */
 // Copyright (c) 2009 Kazuhiko Arase
@@ -1597,7 +1608,7 @@ function pinNote(){
 }
 setInterval(pinNote,3000);
 // Neue Version auf GitHub: der Fernseher lädt sich von selbst neu (alle 5 Minuten prüfen)
-const BUILD='4f5d5ba38e';
+const BUILD='8dab08df89';
 async function checkVersion(){
   try{const r=await fetch(location.pathname+'?v='+Date.now(),{cache:'no-store'});if(!r.ok)return;const t=await r.text();const m=t.match(/const BUILD='([0-9a-f]{10})'/);if(m&&m[1]!==BUILD)location.reload()}catch(e){}
 }

@@ -438,6 +438,9 @@ function setRoster(){ROSTER=KAB.players.filter(p=>p&&p.id).map(p=>({id:p.id,firs
 const pl=id=>ROSTER.find(r=>r.id===id);
 const short=r=>r?(r.num?'#'+r.num+' ':'')+(r.last&&ROSTER.filter(x=>x.last===r.last).length>1&&r.first?r.last+' '+r.first[0]+'.':(r.last||r.first||'')):'';
 const nameOnly=id=>{const r=pl(id);return r?short(r).replace(/^#\d+ /,''):''};
+// Captain & Assistenten aus der Kabine (Standard wie dort: Kranebitter C, Wenter und Steiner A)
+const LEAD0=[['kranebitter','luca'],['wenter','thomas'],['steiner','jonas']];
+function leadIds(e){if(e.cap!==undefined)return {c:e.cap||null,a:(e.alt||[]).filter(Boolean)};const f=(l,fi)=>{const r=ROSTER.find(p=>p.last.trim().toLowerCase()===l&&p.first.trim().toLowerCase()===fi);return r?r.id:null};return {c:f(...LEAD0[0]),a:[f(...LEAD0[1]),f(...LEAD0[2])].filter(Boolean)}}
 function syncPlayers(){const G=S.goal,M=S.mvp;let r=pl(G.pid);G.first=r?r.first:'';G.last=r?r.last:'';G.num=r?r.num:'';G.assist=[pl(G.a1),pl(G.a2)].filter(Boolean).map(short).join(', ');
   r=pl(M.pid);M.first=r?r.first:'';M.last=r?r.last:'';M.num=r?r.num:''}
 
@@ -459,7 +462,7 @@ function smScore(g){const us=smUs(g),th=us==='H'?'A':'H',per=[1,2,3].map(p=>{con
 /* ---------- Spiele: Kabine, eigene Instagram-Spiele, nur Shot Map ---------- */
 function buildEntries(){
   const hid=e=>!!(IG.notes[e.key]||{}).hidden;
-  const k=KAB.games.filter(g=>g&&g.id&&!g.example).map(g=>({key:'k:'+g.id,src:'kabine',id:g.id,opp:g.opp||'',date:g.date||'',time:g.time||'',home:g.home!==false,venue:'',lines:g.lines||[],pairs:g.pairs||[],g1:g.g1||null,g2:g.g2||null,sm:g.sm}));
+  const k=KAB.games.filter(g=>g&&g.id&&!g.example).map(g=>({key:'k:'+g.id,src:'kabine',id:g.id,opp:g.opp||'',date:g.date||'',time:g.time||'',home:g.home!==false,venue:'',lines:g.lines||[],pairs:g.pairs||[],g1:g.g1||null,g2:g.g2||null,sm:g.sm,cap:g.cap,alt:g.alt}));
   const i=Object.entries(IG.games).map(([id,g])=>({key:'i:'+id,src:'ig',id,opp:g.opp||'',date:g.date||'',time:g.time||'',home:g.home!==false,venue:g.venue||'',lines:[],pairs:[],g1:null,g2:null,sm:g.sm}));
   const base=k.concat(i),used=new Set(base.map(e=>{const L=linkOf(e);return L.g&&L.g.id}).filter(Boolean));
   const s=smAll().filter(g=>!used.has(g.id)&&usRe().test((g.home||'')+' '+(g.away||''))).map(g=>{const us=smUs(g);return {key:'s:'+g.id,src:'shotmap',id:g.id,opp:us==='H'?g.away:g.home,date:g.date||'',time:g.time||'',home:us==='H',venue:g.venue||'',lines:[],pairs:[],g1:null,g2:null}});
@@ -486,7 +489,8 @@ function derive(){
   if(n.state)S.score.state=n.state;
   S.score.goals=(n.goals||[]).map(x=>Object.assign({},x));
   S.sel=Object.assign({},n.sel||{});S.view=JSON.parse(JSON.stringify(n.view||{}));
-  const lu=e.lines.map((l,i)=>[nameOnly(l.lw),nameOnly(l.c),nameOnly(l.rw),nameOnly(e.pairs[i]&&e.pairs[i].ld),nameOnly(e.pairs[i]&&e.pairs[i].rd)]).filter(r=>r.some(Boolean));
+  const LD=leadIds(e),nmL=id=>{const n=nameOnly(id);return !n?'':id===LD.c?n+' (C)':LD.a.includes(id)?n+' (A)':n};
+  const lu=e.lines.map((l,i)=>[nmL(l.lw),nmL(l.c),nmL(l.rw),nmL(e.pairs[i]&&e.pairs[i].ld),nmL(e.pairs[i]&&e.pairs[i].rd)]).filter(r=>r.some(Boolean));
   S.lineup=n.lineup?n.lineup.map(r=>r.slice()):(lu.length?lu:[['','','','','']]);
   S.gk=n.gk!=null?n.gk:[e.g1,e.g2].filter(Boolean).map(nameOnly).join(' · ');
   const first=S.score.goals[0]||{pid:(e.lines[0]&&e.lines[0].c)||(ROSTER[0]||{}).id||'',a1:'',a2:''};
