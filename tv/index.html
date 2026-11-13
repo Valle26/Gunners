@@ -362,7 +362,9 @@ img.foto[src*="/uebungen/"]{object-fit:contain!important;padding:4px!important}
 .kc{position:relative;width:var(--cw);flex:none;display:flex;flex-direction:column;background:#16171a;border:1px solid #2a2b30;border-radius:14px;overflow:hidden}
 .kc .kp{position:relative;width:100%;aspect-ratio:4/5;background:#202126}
 .kc .kp .ini{font-size:calc(var(--cw) * .28)}
-.kc .kcap{position:absolute;right:8px;top:8px;width:calc(var(--cw) * .2);height:calc(var(--cw) * .2);border-radius:50%;background:var(--accent);color:#141208;font-family:var(--display);font-weight:800;font-size:calc(var(--cw) * .12);display:grid;place-items:center;line-height:1;box-shadow:0 2px 8px rgba(0,0,0,.45)}
+.kc .kfr{display:flex;align-items:center;justify-content:space-between;gap:calc(var(--cw) * .04);min-width:0}
+.kc .kfr .kf{min-width:0}
+.kc .kcap{flex:none;width:calc(var(--cw) * .14);height:calc(var(--cw) * .14);border-radius:50%;background:var(--accent);color:#141208;font-family:var(--display);font-weight:800;font-size:calc(var(--cw) * .095);display:grid;place-items:center;line-height:1}
 .kc .kpos{position:absolute;left:8px;top:8px;background:rgba(10,11,13,.82);color:var(--accent);font-family:var(--display);font-weight:700;letter-spacing:.08em;font-size:calc(var(--cw) * .085);line-height:1;padding:5px 8px;border-radius:7px}
 .kc .kn{height:calc(var(--cw) * .4);display:flex;align-items:center;gap:calc(var(--cw) * .09);padding:0 calc(var(--cw) * .06);border-top:3px solid var(--accent);min-width:0}
 .kc .knr{flex:none;font-family:var(--display);font-weight:700;color:var(--accent);font-size:calc(var(--cw) * .22);line-height:.9;font-variant-numeric:tabular-nums;letter-spacing:-.02em}
@@ -487,7 +489,7 @@ html.mobon,html.mobon body{overflow:hidden}
 .mlb .kr{gap:10px}
 .mlb .kr.k4{--cw:calc((var(--mw) - 24px) / 4);gap:8px}
 .mlb .kc .kpos{font-size:10px;padding:3px 5px;left:5px;top:5px}
-.mlb .kc .kcap{right:5px;top:5px;width:22px;height:22px;font-size:13px}
+.mlb .kc .kcap{min-width:18px;min-height:18px;font-size:max(11px,calc(var(--cw) * .095))}
 .mumb{position:relative;width:100%;aspect-ratio:85/100;--cw:calc(var(--mw) * .21)}
 .mumb .up{position:absolute;transform:translate(-50%,-50%)}
 .mgrp{border:1px solid var(--line);border-radius:14px;overflow:hidden;background:var(--surface)}
@@ -1217,7 +1219,7 @@ function kc(k,nolab){
   const lab=nolab?'':`<span class="kpos">${pos}</span>`;
   if(!p)return `<div class="kc empty"><div class="kp">${lab}</div><div class="kn"></div></div>`;
   const cr=roleOf(SG(),p.id);
-  return `<div class="kc${k==='g2'?' dim':''}"><div class="kp">${photo(p)}${lab}${cr?`<span class="kcap">${cr}</span>`:''}</div><div class="kn">${p.num?`<span class="knr">${esc(p.num)}</span>`:''}<div class="knm"><div class="kl fit">${esc(p.last)}</div><div class="kf">${esc(p.first)}</div></div></div></div>`;
+  return `<div class="kc${k==='g2'?' dim':''}"><div class="kp">${photo(p)}${lab}</div><div class="kn">${p.num?`<span class="knr">${esc(p.num)}</span>`:''}<div class="knm"><div class="kl fit">${esc(p.last)}</div><div class="kfr"><div class="kf">${esc(p.first)}</div>${cr?`<span class="kcap" title="${cr==='C'?'Captain':'Assistent'}">${cr}</span>`:''}</div></div></div></div>`;
 }
 /* ---------- QR-Code (qrcode-generator, MIT) für die Überweisung am Kabinen-TV ---------- */
 // Copyright (c) 2009 Kazuhiko Arase
@@ -1608,7 +1610,7 @@ function pinNote(){
 }
 setInterval(pinNote,3000);
 // Neue Version auf GitHub: der Fernseher lädt sich von selbst neu (alle 5 Minuten prüfen)
-const BUILD='8dab08df89';
+const BUILD='bbae065ea3';
 async function checkVersion(){
   try{const r=await fetch(location.pathname+'?v='+Date.now(),{cache:'no-store'});if(!r.ok)return;const t=await r.text();const m=t.match(/const BUILD='([0-9a-f]{10})'/);if(m&&m[1]!==BUILD)location.reload()}catch(e){}
 }
