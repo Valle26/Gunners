@@ -267,9 +267,10 @@ details.panel[open] summary::after{content:'▴'}
 .teamsel{display:grid;grid-template-columns:1fr 1fr;gap:8px}
 .teamsel button{border:1px solid var(--line);background:var(--surface-2);padding:10px;border-radius:10px;font-weight:600;display:flex;gap:8px;align-items:center;justify-content:center;min-width:0;overflow-wrap:anywhere}
 .teamsel button[aria-pressed="true"]{border-color:var(--fg);box-shadow:inset 0 0 0 1px var(--fg)}
-.gkrow{display:flex;flex-wrap:wrap;gap:8px;min-width:0}
-.gkbtn{border:1px solid var(--line);background:var(--surface);border-radius:10px;padding:8px 12px;display:inline-flex;align-items:center;gap:8px;font-weight:500;min-width:0;max-width:100%;text-align:left}
-.gkbtn b{font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.gkrow{display:grid;grid-template-columns:1fr 1fr;gap:8px;min-width:0;width:100%}
+.gkbtn{border:1px solid var(--line);background:var(--surface);border-radius:10px;padding:8px 12px;display:flex;align-items:center;gap:8px;font-weight:500;min-width:0;width:100%;text-align:left}
+.gkbtn .gkt{display:grid;min-width:0;flex:1}.gkbtn .gkt small{font-size:11px;color:var(--muted);font-weight:500;line-height:1.2}
+.gkbtn b{font-weight:600;white-space:normal;overflow-wrap:anywhere;line-height:1.2}
 .gkbtn .swap{color:var(--accent-text);font-weight:600;flex:none}
 .gkbtn.unset b{color:var(--muted);font-weight:500}
 .gklist{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:8px}
@@ -382,6 +383,18 @@ textarea{min-height:110px;font-family:ui-monospace,SFMono-Regular,Menlo,Consolas
   .hide-sm{display:none}
   th{letter-spacing:.03em}
 }
+.ctl.gkctl{width:100%;flex-wrap:wrap}
+.sheet .sheet-in{max-height:calc(100vh - 40px);max-height:calc(100dvh - 40px);overflow-y:auto}
+.sheet .net{max-height:calc(100vh - 340px);max-height:calc(100dvh - 340px);min-height:180px}
+.kits{display:flex;flex-wrap:wrap;gap:8px}
+.kits button{border:1px solid var(--line);background:var(--surface-2);border-radius:999px;padding:7px 12px 7px 8px;display:inline-flex;align-items:center;gap:7px;font-weight:500}
+.kits button i{width:16px;height:16px;border-radius:50%;border:2px solid rgba(255,255,255,.7)}
+.kits button[aria-pressed="true"]{border-color:var(--accent);box-shadow:0 0 0 1px var(--accent) inset}
+.kabgk{display:flex;flex-wrap:wrap;gap:8px}
+.kabgk button{border:1px dashed var(--line);background:none;border-radius:10px;padding:8px 12px;font-weight:500}
+.ends{align-items:center;gap:8px}
+.ends .flip{border:1px solid var(--line);background:var(--surface-2);border-radius:999px;padding:4px 10px;font-size:13px;font-weight:600;white-space:nowrap}
+.gameset{display:grid;gap:12px}
 </style>
 </head>
 <body>
@@ -479,12 +492,12 @@ function initStore(){
   const c=ls.get(CACHE)||{}, p=ls.get(PREF)||{};
   S.games=Array.isArray(c.games)?c.games:[];
   (c.queue||[]).forEach(id=>queue.add(id)); (c.dels||[]).forEach(id=>dels.add(id));
-  S.currentId=p.currentId||null; S.lastHome=p.lastHome||null; S.lastGk=p.lastGk||'';
+  S.currentId=p.currentId||null; S.lastHome=p.lastHome||null; S.lastGk=p.lastGk||''; S.lastUs=p.lastUs||null;
 }
 function persist(){
   if(!CLOUD){ls.set(KEY,S);return}
   ls.set(CACHE,{games:S.games,queue:[...queue],dels:[...dels],member:member?{approved:member.approved,role:member.role,user_id:member.user_id}:null});
-  ls.set(PREF,{currentId:S.currentId,lastHome:S.lastHome,lastGk:S.lastGk||''});
+  ls.set(PREF,{currentId:S.currentId,lastHome:S.lastHome,lastGk:S.lastGk||'',lastUs:S.lastUs||null});
 }
 function commit(...gs){
   gs.filter(Boolean).forEach(g=>{g.updatedAt=Date.now();if(CLOUD)queue.add(g.id)});
@@ -625,7 +638,7 @@ async function afterLogin(user,recheck){
   const ok=!!data&&data.status==='ok'&&(data.is_admin||!!data.shotmap);
   if(!ok){location.replace(data&&data.status==='ok'?'../?kein=shotmap':'../?zu=shotmap');return}
   member={user_id:user.id,email:user.email,approved:true,role:data.is_admin?'admin':'member'}; persist();
-  hideGate(); await flush(); await loadGames(); subscribe(); start();
+  hideGate(); await flush(); await loadGames(); await loadKab(); subscribe(); start();
 }
 async function logout(){
   try{localStorage.removeItem(CACHE)}catch(e){}
@@ -635,6 +648,13 @@ async function logout(){
 async function loadMembers(){members=[]}
 async function setMember(){}
 
+/* ---------- Kabine (Kampfmannschaft): Spiele und Torhüter übernehmen ---------- */
+let KABG=[],KABP=[];
+async function loadKab(){try{const [p,g]=await Promise.all([sb.from('kb_docs').select('key,data').eq('team','km').like('key','player:%'),sb.from('kb_docs').select('key,data').eq('team','km').like('key','game:%')]);
+  if(!p.error)KABP=(p.data||[]).map(r=>r.data).filter(Boolean);if(!g.error)KABG=(g.data||[]).map(r=>r.data).filter(x=>x&&!x.example)}catch(e){}}
+const kabName=id=>{const p=KABP.find(x=>x.id===id);return p?`${p.first||''} ${p.last||''}`.trim():''};
+function kabGoalies(g){const k=KABG.find(x=>x.date===g.date);const a=k?[k.g1,k.g2].map(kabName).filter(Boolean):[];
+  KABP.filter(p=>p.pos==='G').forEach(p=>{const n=`${p.first||''} ${p.last||''}`.trim();if(n&&!a.includes(n))a.push(n)});return a}
 /* ---------- Logik ---------- */
 const ui={showGk:ls.get('shotmap_gk')!==false,editId:null,ePer:'all',eShot:null,eMove:null,eMsg:null,igFmt:'p',igImg:null,netT:'H',netRes:'sog',fGk:'all',gkSheet:null,showSlot:!!ls.get('shotmap_slot'),view:'live',liveScope:'period',fRes:'all',statsId:null,fPer:'all',fColor:'team',pending:null,armed:null,newDir:'right',setMsg:null,restoreMsg:null};
 const cur=()=>S.games.find(g=>g.id===S.currentId&&g.status==='live');
@@ -696,7 +716,12 @@ function handOf(g,t,n){const k=t+'|'+(n===undefined?'?':n);if(g.gkHand&&g.gkHand
     if(hit){const q=Object.keys(hit.gkHand).find(q=>q.endsWith('|'+n));return hit.gkHand[q]}}
   return 'L'}
 const gkToggle=()=>`<button class="toggle" data-act="gktoggle" aria-pressed="${!!ui.showGk}"><i></i>Goalie anzeigen</button>`;
-const isOppGoal=(g,t)=>!isUs(t==='H'?g.home:g.away)&&(isUs(g.home)||isUs(g.away)||t==='A');
+const isOppGoal=(g,t)=>{const u=usOf(g);return u?t!==u:t==='A'};
+// Trikot des gegnerischen Goalies (Farbe per Filter auf das Goalie-Bild)
+const KITS=[['blue','Blau','#1f5fd1',''],['red','Rot','#d7263d','hue-rotate(150deg) saturate(1.4)'],['green','Grün','#16a05a','hue-rotate(-95deg) saturate(1.1)'],['orange','Orange','#f08a24','hue-rotate(185deg) saturate(1.8) brightness(1.1)'],['purple','Violett','#8b5cf6','hue-rotate(55deg)'],['black','Schwarz','#222','grayscale(1) brightness(.7)']];
+const KITF=Object.fromEntries(KITS.map(k=>[k[0],k[3]]));
+const oppKit=(g,t)=>isOppGoal(g,t)?(g.oppKit||'blue'):false;
+const kitBtns=g=>`<div class="kits">${KITS.map(([k,l,c])=>`<button data-act="kit" data-v="${k}" aria-pressed="${(g.oppKit||'blue')===k}"><i style="background:${c}"></i>${l}</button>`).join('')}</div>`;
 const handSeg=(act,h)=>`<div class="ctl"><span class="ctl-label">Fanghand</span><div class="seg"><button class="pp" data-act="${act}" data-v="L" aria-pressed="${h==='L'}">Links</button><button class="pp" data-act="${act}" data-v="R" aria-pressed="${h==='R'}">Rechts</button></div></div>`;
 function netSVG(id,marks,tap,labels,hand,gop,oppGk){
   const x0=NX0,y0=NY0,x1=NX0+NW,y1=NY0+NH,r=18;
@@ -725,7 +750,7 @@ function netSVG(id,marks,tap,labels,hand,gop,oppGk){
   <line x1="0" y1="${y1+2}" x2="200" y2="${y1+2}" stroke="var(--rink-red)" stroke-width="1.6"/>
   <path d="${frame}" stroke="var(--post)" stroke-width="7" fill="none" stroke-linecap="round"/>
   <path d="${frame}" stroke="#ffffff" stroke-opacity=".35" stroke-width="1.6" fill="none" transform="translate(-1.2 -1.2)" stroke-linecap="round"/>
-  ${hand&&ui.showGk?(()=>{const h=146,w=h*GK_AR[hand];return `<image href="${(oppGk?GK_OPP:GK_IMG)[hand]}" x="${100-w/2}" y="0" width="${w}" height="${h}" opacity="${gop||1}" preserveAspectRatio="xMidYMax meet"/>`})():''}
+  ${hand&&ui.showGk?(()=>{const h=146,w=h*GK_AR[hand];return `<image href="${(oppGk?GK_OPP:GK_IMG)[hand]}"${oppGk&&KITF[oppGk]?` style="filter:${KITF[oppGk]}"`:''} x="${100-w/2}" y="0" width="${w}" height="${h}" opacity="${gop||1}" preserveAspectRatio="xMidYMax meet"/>`})():''}
   ${hand&&ui.showGk&&labels?(()=>{const L=(t,x,y,a)=>`<text x="${x}" y="${y}" text-anchor="${a}" font-size="5.9" font-family="var(--body)" font-weight="600" fill="#3a3e46" stroke="#fff" stroke-width="1.8" stroke-linejoin="round" paint-order="stroke">${t}</text>`;
     const lf=sideName(0,hand),rt=sideName(2,hand);return L(lf+' oben',x0+8,y0+11,'start')+L(rt+' oben',x1-8,y0+11,'end')+L('Schoner '+lf,x0+6,y1-4,'start')+L('Schoner '+rt,x1-6,y1-4,'end')+L('Five Hole',100,y1+11,'middle')})():''}
   <g>${marks||''}</g></svg>`}
@@ -828,15 +853,15 @@ function vLive(){
     <div class="ctl"><span class="ctl-label">Situation</span><div class="seg">${sb('EV','5 gegen 5')}${sb('PPH','PP '+esc(short(g.home)))}${sb('PPA','PP '+esc(short(g.away)))}</div></div>
   </div>
   <div class="controls">
-    <div class="ctl" style="min-width:0"><span class="ctl-label">Im Tor</span><div class="gkrow">${['H','A'].map(t=>{const c=gkCur(g,t);
-      return `<button class="gkbtn ${c===undefined?'unset':''}" data-act="gkopen" data-t="${t}"><i class="dot ${t==='H'?'h':'a'}"></i><b>${c===undefined?'Torhüter festlegen':esc(gkName(c))}</b><span class="swap">⇄</span></button>`}).join('')}</div></div>
+    <div class="ctl gkctl" style="min-width:0"><span class="ctl-label">Im Tor</span><div class="gkrow">${['H','A'].map(t=>{const c=gkCur(g,t);
+      return `<button class="gkbtn ${c===undefined?'unset':''}" data-act="gkopen" data-t="${t}"><i class="dot ${t==='H'?'h':'a'}"></i><span class="gkt"><small>${esc(short(t==='H'?g.home:g.away))}</small><b>${c===undefined?'Torhüter festlegen':esc(gkName(c))}</b></span><span class="swap">⇄</span></button>`}).join('')}</div></div>
   </div>
   <div class="controls">
     <div class="ctl"><span class="ctl-label">Anzeige</span><div class="seg"><button data-act="scope" data-v="period" aria-pressed="${ui.liveScope!=='all'}">Dieses Drittel</button><button data-act="scope" data-v="all" aria-pressed="${ui.liveScope==='all'}">Ganzes Spiel</button></div></div>
     ${resSeg()}
   </div>
   <section class="rinkwrap">
-    <div class="ends"><span>◀ <b>${esc(short(leftTeam))}</b> greift an</span><span><b>${esc(short(rightTeam))}</b> greift an ▶</span></div>
+    <div class="ends"><span>◀ <b>${esc(short(leftTeam))}</b> greift an</span><button class="flip" data-act="flipdir" title="Angriffsrichtung tauschen">⇄ Seiten tauschen</button><span><b>${esc(short(rightTeam))}</b> greift an ▶</span></div>
     ${rinkSVG('live-rink',marks,true)}
     <div class="under"><div class="btns">${bigBtn()}${slotBtn()}</div><span class="hint">Tipp auf die Stelle, von wo geschossen wurde. ${ui.liveScope==='all'?'Angezeigt: alle Schüsse des Spiels, ausgerichtet wie im '+PER[g.period]+'.':'Angezeigt: nur '+PER[g.period]+'.'}</span></div>
   </section>
@@ -1002,7 +1027,7 @@ function netPanel(g,selGk){
   return `<section class="panel"><div class="bar-row"><div class="eyebrow">Torbild · ${who}</div></div>
     <div class="controls" style="margin-top:8px">${selGk?'<span class="note">Gefiltert nach Torhüter. Filter oben entfernen, um zwischen den Toren zu wechseln.</span>':`<div class="seg">${tb('H','Tor '+esc(short(g.home)))}${tb('A','Tor '+esc(short(g.away)))}</div>`}<div class="seg">${rb('sog','Aufs Tor')}${rb('G','Nur Tore')}</div>${gkToggle()}</div>
     <div class="netwrap" style="margin-top:12px">
-      <div>${netSVG('stats-net',marks,false,false,dh,.5,isOppGoal(g,t))}<div class="zcap" style="max-width:520px"><span>◀ ${sideName(0,dh)}</span><span>Sicht des Schützen · fängt ${dh==='L'?'links':'rechts'}</span><span>${sideName(2,dh)} ▶</span></div></div>
+      <div>${netSVG('stats-net',marks,false,false,dh,.5,oppKit(g,t))}<div class="zcap" style="max-width:520px"><span>◀ ${sideName(0,dh)}</span><span>Sicht des Schützen · fängt ${dh==='L'?'links':'rechts'}</span><span>${sideName(2,dh)} ▶</span></div></div>
       <div><div class="zgrid">${Z.map((row,ri)=>row.map((z,ci)=>`<div${ZC[ri][ci]?` style="box-shadow:inset 0 3px 0 ${ZC[ri][ci]}"`:''}><i style="opacity:${z[1]?(.15+.55*z[1]/maxG).toFixed(2):0}"></i><span class="zn">${zoneLabel(ri,ci,dh)}</span><b>${z[1]}</b><small>${z[0]} aufs Tor</small></div>`).join('')).join('')}</div>
         <div class="zcap"><span>Tore pro Zone</span><span>${withNet.length} Schüsse mit Torbild</span></div>
         ${hotZ.length?`<p class="hot">Die meisten Gegentore: <b>${hotZ.join(', ')}</b> (${hotZ.length>1?'je ':''}${topG})</p>`:'<p class="note">Noch keine Tore mit Torbild.</p>'}
@@ -1036,6 +1061,11 @@ function vEdit(){
   main.innerHTML=`<div class="head"><div><div class="eyebrow">Spiel bearbeiten ${g.status==='live'?'<span class="chip live">Läuft</span>':''}</div><h2>${esc(g.home)} – ${esc(g.away)}</h2><div class="when">${fmtDate(g.date)} · ${esc(g.time)} Uhr</div></div>
     <div class="btns"><button class="btn" data-act="openstats" data-id="${g.id}">Zur Statistik</button><button class="btn" data-act="view" data-v="archive">Zum Archiv</button></div></div>
   ${ui.eMsg?`<div class="msg ${ui.eMsg.t}">${esc(ui.eMsg.m)}</div>`:''}
+  <section class="panel gameset"><div class="eyebrow">Spiel</div>
+    <div class="controls"><div class="ctl"><span class="ctl-label">Unsere Mannschaft</span><div class="seg"><button data-act="eus" data-v="H" aria-pressed="${usOf(g)==='H'}">${esc(short(g.home))} (Heim)</button><button data-act="eus" data-v="A" aria-pressed="${usOf(g)==='A'}">${esc(short(g.away))} (Gast)</button></div></div></div>
+    <div class="controls"><div class="ctl"><span class="ctl-label">${esc(short(g.home))} greift im 1. Drittel an</span><div class="seg"><button data-act="flipdir" aria-pressed="${g.homeDirP1==='left'}" ${g.homeDirP1==='left'?'disabled':''}>◀ nach links</button><button data-act="flipdir" aria-pressed="${g.homeDirP1!=='left'}" ${g.homeDirP1!=='left'?'disabled':''}>nach rechts ▶</button></div></div></div>
+    <div><div class="lbl" style="margin-bottom:6px">Trikot Torhüter ${esc(short(isOppGoal(g,'H')?g.home:g.away))}</div>${kitBtns(g)}</div>
+  </section>
   ${pRows?`<section class="panel"><div class="eyebrow">Torhüter pro Drittel</div><p class="note" style="margin:6px 0 10px">Hier ordnest du alle Schüsse eines Drittels auf einmal dem richtigen Goalie zu, zum Beispiel wenn der Wechsel zu spät eingetragen wurde.</p>
     <div class="tablewrap"><div class="pgrid"><div></div>${ps.map(p=>`<div class="note" style="text-align:center">${p===4?'OT':p+'. Drittel'}</div>`).join('')}${pRows}</div></div></section>`:''}
   <section class="rinkwrap">
@@ -1108,7 +1138,7 @@ function editSheet(root,g){
     <div class="lbl">Situation</div><div class="erow" style="grid-template-columns:repeat(3,1fr)">${['EV','PP','SH'].map(x=>b('es',x,d.s===x,x==='EV'?'5 gegen 5':x)).join('')}</div>
     ${d.r==='G'||d.r==='S'?`<div class="lbl">Torhüter im Tor</div>
       <select id="e-shot-gk"><option value="__none" ${d.gk===undefined?'selected':''}>nicht zugeordnet</option>${fk.map(n=>`<option value="${esc(n)}" ${d.gk===n?'selected':''}>${esc(n)}</option>`).join('')}<option value="" ${d.gk===''?'selected':''}>Leeres Tor</option></select>
-      <div class="lbl">Torbild – tippen zum Ändern</div><div class="controls">${handSeg('ehand',eh)}${gkToggle()}</div>${netSVG('e-net',netMark,true,!netMark,eh,1,isOppGoal(g,opp(d.t)))}
+      <div class="lbl">Torbild – tippen zum Ändern</div><div class="controls">${handSeg('ehand',eh)}${gkToggle()}</div>${netSVG('e-net',netMark,true,!netMark,eh,1,oppKit(g,opp(d.t)))}
       ${d.nx!==undefined?'<div class="btns"><button class="btn small" data-act="enetclear">Torbild entfernen</button></div>':''}`:''}
     <div class="btns"><button class="btn" data-act="emove">Ort auf dem Feld ändern</button><button class="btn danger ${ui.armed==='eshot'?'armed':''}" data-act="edel">${ui.armed==='eshot'?'Wirklich löschen':'Schuss löschen'}</button></div>
     <div class="btns savebar"><button class="btn primary" data-act="esave">Speichern</button><button class="btn" data-act="ecancel">Abbrechen</button></div>
@@ -1137,38 +1167,50 @@ function vArchive(){
 }
 
 function vNew(){
-  const last=S.lastHome||HOME_DEFAULT;
+  const usName=S.lastUs||HOME_DEFAULT,nu=ui.newUs==='A'?'A':'H';ui.newUs=nu;
+  const t0=today(),kab=KABG.filter(k=>k&&k.date&&k.date>=t0).sort((x,y)=>(x.date+(x.time||'')).localeCompare(y.date+(y.time||''))).slice(0,12);
   main.innerHTML=`<div><div class="eyebrow">Neues Spiel</div><h2>Wer spielt gegen wen?</h2></div>
   <form id="newgame" autocomplete="off">
+    ${kab.length?`<label>Spiel aus der Kabine übernehmen<select id="f-kab"><option value="">– selbst eintragen –</option>${kab.map(k=>`<option value="${esc(k.id)}">${fmtDate(k.date)} · ${k.home!==false?'Heim gegen':'Auswärts bei'} ${esc(k.opp||'Gegner')}</option>`).join('')}</select></label>
+    <p class="note" style="margin-top:-4px">Gegner, Datum, Beginn und eure Torhüter aus der Aufstellung in der Kabine werden eingetragen.</p>`:''}
+    <label>${esc(short(usName))} spielt
+      <div class="seg" role="group"><button type="button" data-act="newus" data-v="H" aria-pressed="${nu==='H'}">Heim</button><button type="button" data-act="newus" data-v="A" aria-pressed="${nu==='A'}">Auswärts</button></div></label>
     <div class="fields">
-      <label>Heimmannschaft<input id="f-home" required value="${esc(last)}"></label>
-      <label>Gastmannschaft<input id="f-away" required placeholder="z. B. Gegner"></label>
+      <label>Heimmannschaft<input id="f-home" required value="${nu==='H'?esc(usName):''}" placeholder="z. B. Gegner"></label>
+      <label>Gastmannschaft<input id="f-away" required value="${nu==='A'?esc(usName):''}" placeholder="z. B. Gegner"></label>
       <label>Datum<input id="f-date" type="date" required value="${today()}"></label>
       <label>Beginn<input id="f-time" type="time" required value="19:30"></label>
       <label>Ort / Halle<input id="f-venue" placeholder="z. B. Heimhalle"></label>
       <label>Bewerb<input id="f-comp" placeholder="z. B. Meisterschaft, Testspiel"></label>
-      <label>Torhüter Heim<input id="f-gkh" value="${esc(S.lastGk||'')}" placeholder="z. B. Huber, Maier"></label>
-      <label>Torhüter Gast<input id="f-gka" placeholder="z. B. Gruber"></label>
+      <label>Torhüter Heim<input id="f-gkh" value="${nu==='H'?esc(S.lastGk||''):''}" placeholder="z. B. Huber, Maier"></label>
+      <label>Torhüter Gast<input id="f-gka" value="${nu==='A'?esc(S.lastGk||''):''}" placeholder="z. B. Gruber"></label>
     </div>
     <p class="note" style="margin-top:-4px">Mehrere Torhüter mit Komma trennen, der Starter zuerst. Du kannst auch später im Spiel noch welche hinzufügen.</p>
     <label>Heim greift im 1. Drittel an – Richtung vom Erfasser aus gesehen
       <div class="seg" role="group"><button type="button" data-act="dir" data-v="left" aria-pressed="${ui.newDir==='left'}">◀ nach links</button><button type="button" data-act="dir" data-v="right" aria-pressed="${ui.newDir!=='left'}">nach rechts ▶</button></div>
     </label>
-    <p class="note">Die App wechselt die Seiten ab dem 2. Drittel automatisch. In der Statistik greift die Heimmannschaft immer nach rechts an, damit alle Drittel vergleichbar sind.</p>
+    <p class="note">Die App wechselt die Seiten ab dem 2. Drittel automatisch. Falls es nicht passt, tippst du beim Erfassen auf „Seiten tauschen“. In der Statistik greift die Heimmannschaft immer nach rechts an.</p>
     <div class="btns"><button class="btn primary" type="submit">Spiel starten</button><button class="btn" type="button" data-act="view" data-v="live">Abbrechen</button></div>
   </form>`;
+  const ks=document.getElementById('f-kab');
+  if(ks)ks.addEventListener('change',()=>{const k=KABG.find(x=>x.id===ks.value);if(!k)return;const set=(id,v)=>{const e=document.getElementById(id);if(e)e.value=v};
+    const want=k.home!==false?'H':'A';if(ui.newUs!==want){const b=document.querySelector(`[data-act=newus][data-v="${want}"]`);if(b)b.click()}
+    const our=(document.getElementById(want==='H'?'f-home':'f-away').value||usName);
+    set(want==='H'?'f-home':'f-away',our);set(want==='H'?'f-away':'f-home',k.opp||'');set('f-date',k.date);if(k.time)set('f-time',k.time);
+    const gks=[k.g1,k.g2].map(kabName).filter(Boolean);if(gks.length)set(want==='H'?'f-gkh':'f-gka',gks.join(', '));
+    if(want==='H'&&!document.getElementById('f-venue').value)set('f-venue','Eishalle Zirl');});
   document.getElementById('newgame').addEventListener('submit',e=>{
     e.preventDefault();const v=id=>document.getElementById(id).value.trim();
-    const g={id:uid(),home:v('f-home'),away:v('f-away'),date:v('f-date'),time:v('f-time'),venue:v('f-venue'),comp:v('f-comp'),homeDirP1:ui.newDir==='left'?'left':'right',period:1,situation:'EV',status:'live',example:false,shots:[]};
+    const g={id:uid(),home:v('f-home'),away:v('f-away'),date:v('f-date'),time:v('f-time'),venue:v('f-venue'),comp:v('f-comp'),homeDirP1:ui.newDir==='left'?'left':'right',period:1,situation:'EV',status:'live',example:false,shots:[],us:ui.newUs==='A'?'A':'H'};
     const gkp=id=>[...new Set(v(id).split(/[,;]/).map(x=>x.trim()).filter(Boolean))];
     g.goalies={H:gkp('f-gkh'),A:gkp('f-gka')};g.gk={H:g.goalies.H[0]??null,A:g.goalies.A[0]??null};g.gkLog=['H','A'].filter(t=>g.goalies[t].length).map(t=>({t,n:g.goalies[t][0],p:1,ts:Date.now()}));
     if(me&&me.email)g.by=me.email;
-    S.games.push(g);S.currentId=g.id;S.lastHome=g.home;S.lastGk=v('f-gkh');commit(g);ui.view='live';ui.toTop=true;render();
+    S.games.push(g);S.currentId=g.id;S.lastUs=g.us==='A'?g.away:g.home;S.lastHome=g.home;S.lastGk=g.us==='A'?v('f-gka'):v('f-gkh');ui.newUs='H';commit(g);ui.view='live';ui.toTop=true;render();
   });
 }
-
 /* ---------- Instagram-Seite (Statistik, ohne Torbild/Zonen) ---------- */
-const isUs=n=>/gunners/i.test(n||'')||n===HOME_DEFAULT||(S.lastHome&&n===S.lastHome);
+const isUs=n=>/gunners/i.test(n||'')||n===HOME_DEFAULT||(!!S.lastUs&&n===S.lastUs);
+const usOf=g=>g&&(g.us==='H'||g.us==='A')?g.us:g&&isUs(g.home)?'H':g&&isUs(g.away)?'A':null;
 function season(d){const [y,m]=(d||today()).split('-').map(Number);return m>=7?`${y}/${String((y+1)%100).padStart(2,'0')}`:`${y-1}/${String(y%100).padStart(2,'0')}`}
 function igShape(r,x,y,c,k){k=k||1;const ink='#15181d';
   if(r==='G')return `<circle cx="${x}" cy="${y}" r="${9*k}" fill="none" stroke="${c}" stroke-width="${3.4*k}"/><circle cx="${x}" cy="${y}" r="${3.6*k}" fill="${c}"/>`;
@@ -1188,7 +1230,7 @@ function igRink(shots,us){
   <path d="M40 132A18 18 0 0 1 40 168Z" fill="#dde8f5" stroke="${R}"/><path d="M560 132A18 18 0 0 0 560 168Z" fill="#dde8f5" stroke="${R}"/></g>
   <rect width="600" height="300" rx="85" fill="none" stroke="#5d6068" stroke-width="4"/>${marks}</svg>`}
 function postHTML(g,fmt){
-  const us=isUs(g.home)?'H':isUs(g.away)?'A':'H', th=opp(us);
+  const us=usOf(g)||'H', th=opp(us);
   const usName=us==='H'?g.home:g.away, thName=us==='H'?g.away:g.home;
   const T=tally(g.shots), U=T[us], O=T[th];
   const ot=g.shots.some(s=>s.p===4);
@@ -1299,6 +1341,9 @@ function sheet(){
     <div class="sheet" role="dialog" aria-label="Torhüter wechseln"><div class="sheet-in">
       <div><h3><i class="dot ${t==='H'?'h':'a'}"></i> Torhüter ${esc(team)}</h3><div class="sub">Ab jetzt zählen alle Schüsse auf dieses Tor für den gewählten Goalie (${PER[g.period]}).</div></div>
       ${l.length?`<div class="gklist">${l.map((n,i)=>`<button data-act="gkset" data-t="${t}" data-i="${i}" aria-pressed="${c===n}">${esc(n)}</button>`).join('')}<button class="en" data-act="gkset" data-t="${t}" data-i="en" aria-pressed="${c===''}">Leeres Tor</button></div>`:'<p class="note" style="margin:0">Noch kein Torhüter eingetragen.</p>'}
+      ${c!==undefined&&c!==''?`<div class="lbl">Fanghand von ${esc(c)}</div><div class="controls">${handSeg('gkhand',handOf(g,t,c))}</div>`:''}
+      ${isOppGoal(g,t)?`<div class="lbl">Trikot Torhüter ${esc(short(team))}</div>${kitBtns(g)}`:''}
+      ${(()=>{if(isOppGoal(g,t))return'';const k=kabGoalies(g).filter(n=>!l.includes(n));return k.length?`<div class="lbl">Aus der Kabine</div><div class="kabgk">${k.map(n=>`<button data-act="gkadd" data-t="${t}" data-n="${esc(n)}">+ ${esc(n)}</button>`).join('')}</div>`:''})()}
       <div class="lbl">Torhüter hinzufügen</div>
       <div class="gkadd"><input id="gk-new" placeholder="Name" autocomplete="off" maxlength="30"><button class="btn primary" data-act="gkadd" data-t="${t}">Hinzufügen</button></div>
       <button class="btn" data-act="gkclose">Schließen</button>
@@ -1313,7 +1358,7 @@ function sheet(){
     <div class="sheet" role="dialog" aria-label="Wohin ging der Schuss"><div class="sheet-in">
       <div><h3>${p.r==='G'?'Tor':'Gehalten'} – wohin ging der Schuss?</h3><div class="sub">Tipp auf die Stelle im Tor · Sicht des Schützen von vorne${fk!==undefined?' · Goalie: '+esc(gkName(fk)):''}</div></div>
       <div class="controls">${handSeg('phand',hand)}${gkToggle()}</div>
-      ${netSVG('net-pick','',true,true,hand,1,isOppGoal(g,dT))}
+      ${netSVG('net-pick','',true,true,hand,1,oppKit(g,dT))}
       <div class="btns"><button class="btn" data-act="netback">← Zurück</button><button class="btn" data-act="netskip">Ohne Torbild speichern</button></div>
     </div></div>`;
     const svg=document.getElementById('net-pick');
@@ -1369,11 +1414,17 @@ document.addEventListener('click',async e=>{
     case'gkopen':ui.pending=null;ui.gkSheet=el.dataset.t;break;
     case'gkclose':ui.gkSheet=null;break;
     case'gkset':case'gkadd':{if(!g)break;const t=el.dataset.t;g.goalies=g.goalies||{H:[],A:[]};g.goalies[t]=g.goalies[t]||[];g.gk=g.gk||{};g.gkLog=g.gkLog||[];
-      let n;if(a==='gkadd'){n=(document.getElementById('gk-new').value||'').trim();if(!n)return;if(!g.goalies[t].includes(n))g.goalies[t].push(n)}
+      let n;if(a==='gkadd'){n=(el.dataset.n||(document.getElementById('gk-new')||{}).value||'').trim();if(!n)return;if(!g.goalies[t].includes(n))g.goalies[t].push(n)}
       else n=el.dataset.i==='en'?'':g.goalies[t][+el.dataset.i];
       if(n===undefined)break;
       if(gkCur(g,t)!==n||g.gk[t]===undefined){g.gk[t]=n;g.gkLog.push({t,n,p:g.period,ts:Date.now()})}
       ui.gkSheet=null;commit(g);break;}
+    case'gkhand':{if(!g||!ui.gkSheet)break;const t=ui.gkSheet,c=gkCur(g,t);g.gkHand=g.gkHand||{};g.gkHand[t+'|'+(c===undefined?'?':c)]=el.dataset.v;commit(g);break;}
+    case'kit':{const gg=ui.view==='edit'?byId(ui.editId):g;if(!gg)break;gg.oppKit=el.dataset.v;commit(gg);if(ui.view==='edit')break;break;}
+    case'flipdir':{const gg=ui.view==='edit'?byId(ui.editId):g;if(!gg)break;gg.homeDirP1=gg.homeDirP1==='left'?'right':'left';commit(gg);break;}
+    case'eus':{const gg=byId(ui.editId);if(!gg)break;if(el.dataset.v)gg.us=el.dataset.v;else gg.us='-';commit(gg);break;}
+    case'newus':{if(ui.newUs===el.dataset.v)return;ui.newUs=el.dataset.v;const sw=(x,y)=>{const A=document.getElementById(x),B=document.getElementById(y);if(!A||!B)return;const v=A.value;A.value=B.value;B.value=v};sw('f-home','f-away');sw('f-gkh','f-gka');
+      document.querySelectorAll('[data-act=newus]').forEach(b=>b.setAttribute('aria-pressed',b.dataset.v===ui.newUs));return;}
     case'nett':ui.netT=el.dataset.v;break;
     case'netres':ui.netRes=el.dataset.v;break;
     case'fgk':ui.fGk=el.dataset.v==='all'?'all':(ui.gkKeys||[])[+el.dataset.v]||'all';break;

@@ -307,6 +307,15 @@ do $$ begin
   end if;
 end $$;
 
+-- Shot Map: Spiele und Torhüter der Kampfmannschaft lesen
+do $$ begin
+  if to_regclass('public.kb_docs') is not null then
+    execute 'drop policy if exists kb_docs_sm_read on public.kb_docs';
+    execute $p$create policy kb_docs_sm_read on public.kb_docs for select to authenticated
+             using (team = 'km' and public.g_app('shotmap') is not null)$p$;
+  end if;
+end $$;
+
 -- 10. Kontrolle: alle Personen mit ihren Rechten
 select coalesce(name, email) as person, status, is_admin as admin, kabine, teams as weitere_mannschaften, shotmap, kasse, instagram
 from public.g_access order by is_admin desc, status, created_at;

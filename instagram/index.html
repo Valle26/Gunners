@@ -443,7 +443,7 @@ function syncPlayers(){const G=S.goal,M=S.mvp;let r=pl(G.pid);G.first=r?r.first:
 
 /* ---------- Shot Map ---------- */
 const smAll=()=>SMG.filter(g=>g&&g.id&&Array.isArray(g.shots)&&!g.example);
-const smUs=g=>usRe().test(g.home||'')?'H':usRe().test(g.away||'')?'A':'H';
+const smUs=g=>g.us==='H'||g.us==='A'?g.us:usRe().test(g.home||'')?'H':usRe().test(g.away||'')?'A':'H';
 const smTally=shots=>{const o={H:{g:0,sog:0},A:{g:0,sog:0}};shots.forEach(s=>{const t=o[s.t];if(!t)return;if(s.r==='G'||s.r==='S')t.sog++;if(s.r==='G')t.g++});return o};
 const smLabel=g=>{const us=smUs(g),T=smTally(g.shots),th=us==='H'?'A':'H';return `${g.date?fmtD(g.date):'ohne Datum'} · ${shortOpp(g.home)} – ${shortOpp(g.away)} · ${g.status==='live'?'live':'Ende'} ${T[us].g}:${T[th].g}`};
 const smCand=date=>date?smAll().filter(g=>g.date===date&&usRe().test((g.home||'')+' '+(g.away||''))):[];

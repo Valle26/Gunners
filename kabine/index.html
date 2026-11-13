@@ -1733,7 +1733,7 @@ function tvKasseRank(){
   ${rest.length?`<div class="klist" style="grid-template-rows:repeat(${Math.ceil(rest.length/2)},minmax(0,1fr))">${rest.map((r,i)=>`<div class="kli" style="--d:${(.9+i*.04).toFixed(2)}s"><span class="krk">${i+4}.</span>${kAv(r,'klav')}<span class="kln fit">${r.p?esc(r.p.last+' '+r.p.first):esc(r.name)}</span><b>${eur(r.paid)}</b></div>`).join('')}</div>`:''}</div>`;
 }
 /* Shot Map */
-const smUs=g=>usRe().test(g.home||'')?'H':usRe().test(g.away||'')?'A':'H';
+const smUs=g=>g.us==='H'||g.us==='A'?g.us:usRe().test(g.home||'')?'H':usRe().test(g.away||'')?'A':'H';
 const smShort=n=>{const w=String(n||'').trim().split(/\s+/);const P=/^(ec|ehc|hc|sc|ev|sv|ek|ac|ehv|ksv|esv|usv|eis|club|team|fc)$/i;return w.find(x=>!P.test(x)&&!/^\d/.test(x))||w[w.length-1]||n};
 // Welches Shot-Map-Spiel gehört zu einem Kabinen-Spiel: fest gewählt (game.sm) oder automatisch, wenn es am selben Tag genau ein Gunners-Spiel gibt
 const smAll=()=>(EXT.sm||[]).filter(g=>g&&g.id&&Array.isArray(g.shots)&&!g.example);
