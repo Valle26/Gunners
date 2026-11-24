@@ -202,6 +202,8 @@
   .btn-add:active{transform:scale(.97)}
   .row .del{border:none; background:none; color:var(--faint); font-size:18px; padding:6px; border-radius:8px}
   .row .del:active{background:var(--surface-3)}
+  .row .rename{width:100%; box-sizing:border-box; font:inherit; font-weight:600; color:var(--ink); background:var(--surface-2); border:1.5px solid var(--primary); border-radius:10px; padding:8px 10px; outline:none}
+  .row .ok{border:none; background:var(--primary); color:var(--primary-ink); font-weight:800; font-size:16px; width:36px; height:36px; border-radius:10px; flex:none}
 
   .seg{display:flex; gap:6px; background:var(--surface-2); border:1px solid var(--line); padding:4px; border-radius:12px; margin:0 2px 10px}
   .seg button{flex:1; border:none; background:none; color:var(--muted); padding:8px 6px; border-radius:9px; font-weight:600; font-size:13.5px}
@@ -994,13 +996,23 @@
       return;
     }
     box.innerHTML = state.players.map(function(p){
+      if(p.id===editPid){
+        return '<div class="row editing">'
+          + '<div class="avatar">'+initials(p.name)+'</div>'
+          + '<div class="main"><input class="rename" data-renamein="'+p.id+'" value="'+esc(p.name)+'" maxlength="60" autocomplete="off" aria-label="Name ändern"></div>'
+          + '<button class="ok" data-renameok="'+p.id+'" aria-label="Speichern">✓</button>'
+          + '<button class="del" data-renamecancel="1" aria-label="Abbrechen">↺</button>'
+          + '</div>';
+      }
       return '<div class="row">'
         + '<div class="avatar">'+initials(p.name)+'</div>'
-        + '<div class="main"><div class="name">'+esc(p.name)+'</div>'
+        + '<div class="main" data-editplayer="'+p.id+'" style="cursor:pointer"><div class="name">'+esc(p.name)+'</div>'
         + '<div class="sub">'+money(balanceOf(p.id))+' offen</div></div>'
+        + '<button class="del" data-editplayer="'+p.id+'" aria-label="Namen ändern">✎</button>'
         + '<button class="del" data-delplayer="'+p.id+'" aria-label="Entfernen">✕</button>'
         + '</div>';
     }).join("");
+    if(editPid){ var inp=box.querySelector("[data-renamein]"); if(inp){ inp.focus(); inp.select(); } }
   }
 
   var catTypeView = "strafe";
@@ -1116,6 +1128,18 @@
     state.players.push({id:uid(), name:name, createdMonth:curMonthKey()});
     generateRecurring();
     save(); renderAll();
+  }
+  var editPid = null;
+  function renamePlayer(id, name){
+    var p = playerById(id); name = (name||"").trim().replace(/\s+/g," ");
+    if(!p){ editPid=null; renderPlayers(); return; }
+    var inp = $("#playerList [data-renamein]");
+    if(!name){ toast("Name darf nicht leer sein"); if(inp) inp.focus(); return; }
+    var dup = state.players.some(function(x){ return x.id!==id && x.name.toLowerCase()===name.toLowerCase(); });
+    if(dup){ toast("„"+name+"“ gibt es schon"); if(inp){ inp.focus(); inp.select(); } return; }
+    editPid = null;
+    if(name!==p.name){ var old=p.name; p.name = name; save(); renderAll(); toast("„"+old+"“ heißt jetzt „"+name+"“"); }
+    else renderPlayers();
   }
   function delPlayer(id){
     var p = playerById(id);
@@ -1340,7 +1364,15 @@
   });
   $("#entrySearch").addEventListener("input", function(){ entryQuery = this.value; renderEntries(); });
   $("#playerList").addEventListener("click", function(e){
-    var d = e.target.closest("[data-delplayer]"); if(d) delPlayer(d.dataset.delplayer);
+    var d = e.target.closest("[data-delplayer]"); if(d){ delPlayer(d.dataset.delplayer); return; }
+    var ok = e.target.closest("[data-renameok]"); if(ok){ var i=$("#playerList [data-renamein]"); renamePlayer(ok.dataset.renameok, i?i.value:""); return; }
+    if(e.target.closest("[data-renamecancel]")){ editPid=null; renderPlayers(); return; }
+    var ed = e.target.closest("[data-editplayer]"); if(ed && !editPid){ editPid = ed.dataset.editplayer; renderPlayers(); }
+  });
+  $("#playerList").addEventListener("keydown", function(e){
+    if(e.key==="Escape" && editPid){ editPid=null; renderPlayers(); return; }
+    var i = e.target.closest("[data-renamein]"); if(!i) return;
+    if(e.key==="Enter"){ e.preventDefault(); renamePlayer(i.dataset.renamein, i.value); }
   });
   $("#addPlayer").addEventListener("click", function(){ addPlayer($("#newPlayer").value); $("#newPlayer").value=""; $("#newPlayer").focus(); });
   $("#newPlayer").addEventListener("keydown", function(e){ if(e.key==="Enter"){ addPlayer(this.value); this.value=""; } });

@@ -409,7 +409,43 @@ function T_sched(){
   tag('DIE NÄCHSTEN SPIELE',64,tY-200-40,{s:28});
   bigLogo(hb+20,tY-260);
 }
-const DRAW={gameday:T_gameday,period:T_period,final:T_final,goal:T_goal,mvp:T_mvp,lineup:T_lineup,sched:T_sched};
+// Starting Six: Aufstellung auf einer angedeuteten Eisfläche, Schriftzug leicht im Hintergrund
+const SIXPOS=[['lw','LW'],['c','C'],['rw','RW'],['ld','LD'],['rd','RD'],['g','G']];
+function capDot(x,y,r,t){ctx.save();ctx.beginPath();ctx.arc(x,y,r,0,7);ctx.fillStyle=C.y;ctx.fill();ctx.lineWidth=4;ctx.strokeStyle='#0b0b0c';ctx.stroke();ctx.restore();txt(t,x,y+r*.4,{w:800,s:r*1.15,c:C.ink,a:'center'})}
+function sixBg(){if(S.photo)return;const keep=ctx;ctx=main;ctx.save();ctx.font=font(800,250);ctx.textAlign='center';ctx.lineWidth=3;const word=US.toUpperCase();
+  for(let k=0;k<2;k++){const y=header()+200+k*215;ctx.strokeStyle=k===1?'rgba(245,197,24,.16)':'rgba(244,242,234,.07)';ctx.strokeText(word,W/2+(k%2?-90:90),y)}ctx.restore();ctx=keep}
+const PIMG={};
+function pimg(p){if(!p||!p.photo)return null;let e=PIMG[p.id];if(e&&e.src===p.photo)return e.ok?e.im:null;
+  e=PIMG[p.id]={src:p.photo,ok:false,im:null};loadImg(p.photo).then(i=>{if(PIMG[p.id]!==e)return;e.im=i;e.ok=true;draw()},()=>{});return null}
+function circPhoto(im,x,y,r){const iw=im.naturalWidth||im.width,ih=im.naturalHeight||im.height;let dw=r*2.2,dh=dw*ih/iw;if(dh<r*2.2){dh=r*2.2;dw=dh*iw/ih}
+  ctx.save();ctx.beginPath();ctx.arc(x,y,r,0,7);ctx.clip();ctx.imageSmoothingQuality='high';ctx.drawImage(im,x-dw/2,y-dh*.42,dw,dh);
+  const g=ctx.createLinearGradient(0,y+r*.35,0,y+r);g.addColorStop(0,'rgba(11,11,12,0)');g.addColorStop(1,'rgba(11,11,12,.55)');ctx.fillStyle=g;ctx.fillRect(x-r,y,2*r,r);ctx.restore()}
+function posPill(t,x,y,gk){const w=measure(t,{w:800,s:26,ls:3})+30,h=36;ctx.save();ctx.beginPath();ctx.roundRect?ctx.roundRect(x-w/2,y-h/2,w,h,h/2):ctx.rect(x-w/2,y-h/2,w,h);ctx.fillStyle=gk?C.w:C.y;ctx.fill();ctx.lineWidth=4;ctx.strokeStyle='#0b0b0c';ctx.stroke();ctx.restore();txt(t,x+1.5,y+9.5,{w:800,s:26,c:C.ink,a:'center',ls:3})}
+function nameNum(p,x,y){const nm=(p.last||'').toUpperCase(),n=p.num?p.num+' ':'',mx=300;let s=44,wn=n?measure(n,{w:800,s}):0,wl=measure(nm,{w:800,s});
+  if(wn+wl>mx){s=s*mx/(wn+wl);wn=n?measure(n,{w:800,s}):0;wl=measure(nm,{w:800,s})}const x0=x-(wn+wl)/2;if(n)txt(n,x0,y,{w:800,s,c:C.y});txt(nm,x0+wn,y,{w:800,s})}
+function T_six(){
+  sixBg();const hb=header();
+  const tg=`VS ${THEM().toUpperCase()}  ·  ${dayLabel(S.g.date)} ${S.g.time}`;const tw=measure(tg,{w:700,s:28,ls:3})+56;tag(tg,(W-tw)/2,hb+56,{s:28});
+  txt('STARTING SIX',W/2,hb+290,{w:800,s:200,c:C.y,a:'center',max:W-110,ls:2});
+  const top=hb+340,bot=BOT()-6,x0=64,x1=W-64,Hr=bot-top;
+  ctx.save();ctx.fillStyle='rgba(11,11,12,.4)';ctx.beginPath();ctx.moveTo(x0,top);ctx.lineTo(x0,bot-150);ctx.quadraticCurveTo(x0,bot,x0+150,bot);ctx.lineTo(x1-150,bot);ctx.quadraticCurveTo(x1,bot,x1,bot-150);ctx.lineTo(x1,top);ctx.closePath();ctx.fill();
+  ctx.lineWidth=4;ctx.strokeStyle='rgba(244,242,234,.28)';ctx.beginPath();ctx.moveTo(x0,top);ctx.lineTo(x0,bot-150);ctx.quadraticCurveTo(x0,bot,x0+150,bot);ctx.lineTo(x1-150,bot);ctx.quadraticCurveTo(x1,bot,x1,bot-150);ctx.lineTo(x1,top);ctx.stroke();
+  ctx.fillStyle='rgba(70,120,230,.55)';ctx.fillRect(x0+2,top+40,x1-x0-4,12);
+  const gl=bot-34;ctx.strokeStyle='rgba(215,38,61,.45)';ctx.beginPath();ctx.moveTo(x0+40,gl);ctx.lineTo(x1-40,gl);ctx.stroke();
+  ctx.fillStyle='rgba(70,120,230,.22)';ctx.beginPath();ctx.arc(W/2,gl,62,Math.PI,0);ctx.fill();ctx.restore();
+  const st=S.fmt==='story',r=st?82:66,o1=st?66:56,o2=st?100:86,yF=top+Hr*(st?.2:.165),yD=top+Hr*(st?.47:.465),yG=top+Hr*(st?.725:.735),P=[[230,yF],[540,yF],[850,yF],[340,yD],[740,yD],[540,yG]],L=S.sixLead||{c:'',a:[]};
+  SIXPOS.forEach(([k,lab],i)=>{const [x,y]=P[i],id=(S.six||{})[k],p=pl(id),gk=k==='g';
+    ctx.save();ctx.beginPath();ctx.arc(x,y,r,0,7);ctx.fillStyle='#18181b';ctx.fill();ctx.restore();
+    if(!p){ctx.save();ctx.beginPath();ctx.arc(x,y,r,0,7);ctx.setLineDash([12,10]);ctx.lineWidth=6;ctx.strokeStyle='rgba(244,242,234,.35)';ctx.stroke();ctx.restore();txt(lab,x,y+14,{w:700,s:40,c:'rgba(244,242,234,.45)',a:'center',ls:2});return}
+    const im=pimg(p);
+    if(im)circPhoto(im,x,y,r);else{const ini=((p.first||'')[0]||'')+((p.last||'')[0]||'');txt(p.num||ini.toUpperCase(),x,y+r*.27,{w:800,s:(p.num?.93:.7)*r,a:'center',max:r*1.6})}
+    ctx.save();ctx.beginPath();ctx.arc(x,y,r,0,7);ctx.lineWidth=6;ctx.strokeStyle=gk?C.w:C.y;ctx.stroke();ctx.restore();
+    posPill(lab,x,y+r,gk);
+    const role=id===L.c?'C':(L.a||[]).includes(id)?'A':'';if(role)capDot(x+r*.74,y-r*.74,st?25:22,role);
+    if(im)nameNum(p,x,y+r+o1);else txt((p.last||'').toUpperCase(),x,y+r+o1,{w:800,s:44,a:'center',max:300});
+    txt((p.first||'').toUpperCase(),x,y+r+o2,{w:600,s:26,a:'center',c:C.g,ls:3,max:300})});
+}
+const DRAW={gameday:T_gameday,six:T_six,period:T_period,final:T_final,goal:T_goal,mvp:T_mvp,lineup:T_lineup,sched:T_sched};
 function draw(){W=1080;H=S.fmt==='story'?1920:1350;if(cv.height!==H)cv.height=H;layer.width=W;layer.height=H;syncPlayers();
   ctx=main;ctx.clearRect(0,0,W,H);background();ctx=lctx;ctx.clearRect(0,0,W,H);DRAW[S.tpl]();ctx=main;ctx.drawImage(layer,0,0)}
 
@@ -417,8 +453,8 @@ function draw(){W=1080;H=S.fmt==='story'?1920:1350;if(cv.height!==H)cv.height=H;
 /* ---------- Instagram: Zustand ---------- */
 const CFG={url:'https://zxjdzvdrcrwjumprayeo.supabase.co',key:'sb_publishable_AbQNgdUqUT8vaN0XRNFruQ_t7fQd7wg'};
 const TABS=['gameday','period','final','goal','mvp','lineup','sched'];
-const TPL=[{k:'gameday',n:'Gameday'},{k:'period',n:'Drittel'},{k:'final',n:'Endstand'},{k:'goal',n:'Tor'},{k:'mvp',n:'Spieler des Spiels'},{k:'lineup',n:'Line-up'},{k:'sched',n:'Spielplan'}];
-const S={tpl:'gameday',fmt:'post',bg:'type',key:null,logos:{},g:{},score:{per:[[0,0],[0,0],[0,0]],shots:[[0,0],[0,0],[0,0]],goals:[],us:0,them:0,state:'p1'},goal:{},mvp:{},lineup:[],gk:'',
+const TPL=[{k:'gameday',n:'Gameday'},{k:'period',n:'Drittel'},{k:'final',n:'Endstand'},{k:'goal',n:'Tor'},{k:'mvp',n:'Spieler des Spiels'},{k:'lineup',n:'Line-up'},{k:'six',n:'Starting Six'},{k:'sched',n:'Spielplan'}];
+const S={tpl:'gameday',fmt:'post',bg:'type',key:null,logos:{},g:{},score:{per:[[0,0],[0,0],[0,0]],shots:[[0,0],[0,0],[0,0]],goals:[],us:0,them:0,state:'p1'},goal:{},mvp:{},lineup:[],gk:'',six:{},sixLead:{c:'',a:[]},
   photo:null,sel:{},view:{},zoom:1,ox:0,oy:0};
 let sb=null,ME=null,CAN_KAB=false;
 const KAB={players:[],games:[]};let SMG=[];const IG={games:{},notes:{},logos:{}};let PHOTOS=[];
@@ -433,7 +469,7 @@ let tt;function toast(m){const t=$('#toast');t.textContent=m;t.hidden=false;clea
 const errMsg=e=>{const m=(e&&e.message)||'';if(/fetch|network/i.test(m))return'Keine Verbindung. Prüfe das Internet.';if(/row-level|permission|policy/i.test(m))return'Dafür fehlt dir das Recht.';if(/Payload too large|exceeded/i.test(m))return'Das Bild ist zu groß.';return m||'Das hat nicht geklappt.'};
 
 /* ---------- Spieler aus der Kabine (Kampfmannschaft) ---------- */
-function setRoster(){ROSTER=KAB.players.filter(p=>p&&p.id).map(p=>({id:p.id,first:p.first||'',last:p.last||'',num:p.num==null?'':String(p.num),pos:p.pos||''}))
+function setRoster(){ROSTER=KAB.players.filter(p=>p&&p.id).map(p=>({id:p.id,first:p.first||'',last:p.last||'',num:p.num==null?'':String(p.num),pos:p.pos||'',photo:p.photo||null}))
   .sort((a,b)=>a.last.localeCompare(b.last,'de')||a.first.localeCompare(b.first,'de'))}
 const pl=id=>ROSTER.find(r=>r.id===id);
 const short=r=>r?(r.num?'#'+r.num+' ':'')+(r.last&&ROSTER.filter(x=>x.last===r.last).length>1&&r.first?r.last+' '+r.first[0]+'.':(r.last||r.first||'')):'';
@@ -492,6 +528,10 @@ function derive(){
   const LD=leadIds(e),nmL=id=>{const n=nameOnly(id);return !n?'':id===LD.c?n+' (C)':LD.a.includes(id)?n+' (A)':n};
   const lu=e.lines.map((l,i)=>[nmL(l.lw),nmL(l.c),nmL(l.rw),nmL(e.pairs[i]&&e.pairs[i].ld),nmL(e.pairs[i]&&e.pairs[i].rd)]).filter(r=>r.some(Boolean));
   S.lineup=n.lineup?n.lineup.map(r=>r.slice()):(lu.length?lu:[['','','','','']]);
+  // Starting Six: 1. Sturmreihe, 1. Verteidigerpaar, Starter-Goalie aus der Kabine, im Reiter änderbar
+  const l0=e.lines[0]||{},p0=e.pairs[0]||{};
+  S.six=Object.assign({lw:'',c:'',rw:'',ld:'',rd:'',g:''},n.six||{lw:l0.lw||'',c:l0.c||'',rw:l0.rw||'',ld:p0.ld||'',rd:p0.rd||'',g:e.g1||''});
+  S.sixLead=n.sixLead?{c:n.sixLead.c||'',a:(n.sixLead.a||[]).slice(0,2)}:{c:LD.c||'',a:LD.a.slice(0,2)};
   S.gk=n.gk!=null?n.gk:[e.g1,e.g2].filter(Boolean).map(nameOnly).join(' · ');
   const first=S.score.goals[0]||{pid:(e.lines[0]&&e.lines[0].c)||(ROSTER[0]||{}).id||'',a1:'',a2:''};
   S.goal=Object.assign({pid:first.pid,a1:first.a1||'',a2:first.a2||'',time:'',period:String(Math.min(3,sm?sm.period:1))},n.goal||{});
@@ -533,16 +573,26 @@ function renderFields(){
   if(k==='mvp'){const M=S.mvp;b=SUB('Spieler')+PS('m-pid','Spieler',M.pid,false)+F('m-num','Nummer',pl(M.pid)?pl(M.pid).num:'',{type:'number'})+F('m-g','Tore',M.g,{type:'number'})+F('m-a','Assists',M.a,{type:'number'})+F('s-us','Endstand '+US,sc.us,{type:'number'})+F('s-them','Endstand Gegner',sc.them,{type:'number'})+gameFields(false)}
   if(k==='lineup'){const e=entry(S.key);b=`<p class="note wide">${e&&e.src==='kabine'?'Die Linien kommen aus dem Spiel in der Kabine. Hier änderst du sie nur für das Bild.':'Dieses Spiel hat keine Linien aus der Kabine. Trag sie hier ein: Stürmer, dann Verteidiger, mit Komma getrennt.'}</p>`+SUB('Linien')+S.lineup.map((l,i)=>F('l-'+i,`${i+1}. Linie`,l.filter(Boolean).join(', '),{wide:true})).join('')+
       `<div class="wide row" style="display:flex;gap:8px;flex-wrap:wrap"><button type="button" class="btn sm" data-ladd>+ Linie</button>${S.lineup.length>1?'<button type="button" class="btn sm" data-ldel>Letzte Linie entfernen</button>':''}${IG.notes[S.key]&&IG.notes[S.key].lineup?'<button type="button" class="btn sm" data-lreset>Wieder aus der Kabine</button>':''}</div>`+F('l-gk','Tor',S.gk,{wide:true})+gameFields(true)}
+  if(k==='six'){const e=entry(S.key),n=IG.notes[S.key]||{},fromK=e&&e.src==='kabine';
+    const XS=(id,label,val)=>`<label class="field"><span>${label}</span><select id="${id}"><option value="">– frei –</option>${ROSTER.map(r=>`<option value="${esc(r.id)}"${r.id===val?' selected':''}>${esc(r.last+' '+r.first)}${r.num?' · #'+esc(r.num):''}</option>`).join('')}</select></label>`;
+    const X=S.six,L=S.sixLead,noNum=SIXPOS.map(([p])=>pl(X[p])).filter(r=>r&&!r.num).map(r=>r.last);
+    b=`<p class="note wide">${fromK?'Kommt aus der Kabine: 1. Sturmreihe, 1. Verteidigerpaar und Starter-Goalie, mit Captain und Assistenten. Hier änderst du sie nur für das Bild.':'Wähl die sechs Spieler für den Start aus.'}</p>`+
+      SUB('Sturm')+XS('x-lw','Linker Flügel (LW)',X.lw)+XS('x-c','Center (C)',X.c)+XS('x-rw','Rechter Flügel (RW)',X.rw)+
+      SUB('Verteidigung')+XS('x-ld','Links (LD)',X.ld)+XS('x-rd','Rechts (RD)',X.rd)+SUB('Tor')+XS('x-g','Goalie (G)',X.g)+
+      SUB('Captain & Assistenten')+XS('x-cap','Captain (C)',L.c)+XS('x-a0','Assistent (A)',L.a[0]||'')+XS('x-a1','Assistent (A)',L.a[1]||'')+
+      (noNum.length?`<p class="note wide">Ohne Rückennummer: ${esc(noNum.join(', '))}. Nummern trägst du über das Spieler-Symbol oben ein.</p>`:'')+
+      (fromK&&(n.six||n.sixLead)?'<div class="wide"><button type="button" class="btn sm" data-xreset>Wieder aus der Kabine</button></div>':'')+gameFields(true)}
   if(k==='sched')b='<p class="note wide">Die nächsten drei Spiele aus der Kabine und deine eigenen Instagram-Spiele.</p>';
   $('#fields').innerHTML=b;summary();
   const isLive=k==='period'||k==='final'||k==='goal';$('#live').hidden=!isLive;
   const sm=SM&&smScore(SM),n=IG.notes[S.key]||{};
   $('#liveTxt').innerHTML=!SM?'<b>Keine Shot Map</b> zu diesem Spiel · Stand unter „Daten anpassen“':sm.live?`<b>Shot Map live</b> · ${sm.us}:${sm.them} · ${sm.period===4?'Overtime':sm.period+'. Drittel'}${n.score?' · <span style="color:var(--accent)">eigener Stand aktiv</span>':''}`:`<b>Shot Map</b> · Endstand ${sm.us}:${sm.them}${n.score?' · <span style="color:var(--accent)">eigener Stand aktiv</span>':''}`;
   $('#live .dot').hidden=!(sm&&sm.live);$('#liveLoad').hidden=!SM;
-  $('#upLogo').hidden=k==='sched';
+  $('#upLogo').hidden=k==='sched'||k==='six';$('#strip').closest('.lib').hidden=k==='six';
 }
 function summary(){const k=S.tpl,G=S.g,sc=S.score;let t;
-  if(k==='gameday'||k==='lineup')t=`vs ${G.opp||'Gegner'} · ${G.date===today()?'Heute':fmtD(G.date)}${G.time?' · '+G.time:''}`;
+  if(k==='six')t=`Starting Six · `+(SIXPOS.map(([p])=>pl(S.six[p])).filter(Boolean).map(r=>r.last).join(', ')||'Spieler wählen');
+  else if(k==='gameday'||k==='lineup')t=`vs ${G.opp||'Gegner'} · ${G.date===today()?'Heute':fmtD(G.date)}${G.time?' · '+G.time:''}`;
   else if(k==='goal')t=`${S.goal.num?'#'+S.goal.num+' ':''}${S.goal.last||'Torschütze wählen'} · ${sc.us}:${sc.them} vs ${THEM()}`;
   else if(k==='mvp')t=`${S.mvp.num?'#'+S.mvp.num+' ':''}${S.mvp.last||'Spieler wählen'} · vs ${THEM()}`;
   else if(k==='sched')t=schedGames().map(e=>shortOpp(e.opp)).join(' · ')||'keine kommenden Spiele';
@@ -565,6 +615,9 @@ $('#fields').addEventListener('input',e=>{const el=e.target,id=el.id,v=el.value;
   if(id==='m-g'||id==='m-a'){S.mvp[id==='m-g'?'g':'a']=n(v);patchNote({mvp:mvpOnly()})}
   if(m=id.match(/^l-(\d+)$/)){S.lineup[m[1]]=v.split(',').map(s=>s.trim()).filter(Boolean);patchNote({lineup:S.lineup})}
   if(id==='l-gk'){S.gk=v;patchNote({gk:v})}
+  if(m=id.match(/^x-(lw|c|rw|ld|rd|g)$/)){S.six[m[1]]=v;patchNote({six:Object.assign({},S.six)});renderFields();$('#data').open=true}
+  if(m=id.match(/^x-(cap|a0|a1)$/)){const L=S.sixLead;let c=L.c,a=[L.a[0]||'',L.a[1]||''];if(v){if(c===v)c='';a=a.map(x=>x===v?'':x)}
+    if(m[1]==='cap')c=v;else a[+m[1].slice(1)]=v;S.sixLead={c,a};patchNote({sixLead:{c,a}});renderFields();$('#data').open=true}
   syncPlayers();summary();draw();});
 const goalOnly=()=>({pid:S.goal.pid,a1:S.goal.a1,a2:S.goal.a2,time:S.goal.time,period:S.goal.period});
 const mvpOnly=()=>({pid:S.mvp.pid,g:S.mvp.g,a:S.mvp.a});
@@ -573,6 +626,7 @@ $('#fields').addEventListener('click',e=>{const G=S.score.goals;
   const d=e.target.closest('[data-gdel]');if(d){G.splice(+d.dataset.gdel,1);patchNote({goals:G});renderFields();draw()}
   if(e.target.closest('[data-ladd]')){S.lineup.push([]);patchNote({lineup:S.lineup});renderFields();draw()}
   if(e.target.closest('[data-ldel]')){S.lineup.pop();patchNote({lineup:S.lineup});renderFields();draw()}
+  if(e.target.closest('[data-xreset]')){const n=Object.assign({},IG.notes[S.key]);delete n.six;delete n.sixLead;IG.notes[S.key]=n;noteDirty[S.key]=1;flushNotes();derive();renderFields();draw();$('#data').open=true}
   if(e.target.closest('[data-lreset]')){const n=Object.assign({},IG.notes[S.key]);delete n.lineup;delete n.gk;IG.notes[S.key]=n;noteDirty[S.key]=1;flushNotes();derive();renderFields();draw()}});
 $('#tabs').addEventListener('click',e=>{const t=e.target.closest('.tab');if(!t)return;clearTimeout(vT);saveView();S.tpl=t.dataset.t;renderTabs();renderFields();renderStrip();applySel();
   const b=$(`.tab[data-t="${S.tpl}"]`);b&&b.scrollIntoView({block:'nearest',inline:'nearest',behavior:'smooth'})});
@@ -661,7 +715,7 @@ function shrink(file,max,type){return new Promise((res,rej)=>{const u=URL.create
   c.width=Math.round(i.width*k);c.height=Math.round(i.height*k);c.getContext('2d').drawImage(i,0,0,c.width,c.height);URL.revokeObjectURL(u);c.toBlob(b=>b?res({blob:b,w:c.width,h:c.height}):rej(new Error('Bild')),type,.88)};i.onerror=()=>{URL.revokeObjectURL(u);rej(new Error('Das Bild konnte nicht geöffnet werden.'))};i.src=u})}
 let busy=0;
 async function uploadBlob(blob,path,type){const {error}=await sb.storage.from(BUCKET).upload(path,blob,{contentType:type,cacheControl:'31536000',upsert:false});if(error)throw error;return sb.storage.from(BUCKET).getPublicUrl(path).data.publicUrl}
-async function addPhotos(files){files=[...files].filter(f=>/^image\//.test(f.type));if(!files.length){toast('Bitte Bilder wählen (JPG oder PNG).');return}
+async function addPhotos(files){if(S.tpl==='six'){toast('Die Starting Six hat kein Foto, nur den Schriftzug im Hintergrund.');return}files=[...files].filter(f=>/^image\//.test(f.type));if(!files.length){toast('Bitte Bilder wählen (JPG oder PNG).');return}
   const tab=S.tpl;let first=null;
   for(const f of files){busy++;renderStrip();
     try{const {blob,w,h}=await shrink(f,2400,'image/jpeg');const path=`${tab}/${Date.now()}-${uid()}.jpg`,url=await uploadBlob(blob,path,'image/jpeg');

@@ -469,8 +469,36 @@ i.pb.pb-G{color:var(--fg)}
 .posseg button{min-width:28px;padding:6px 6px}
 @media (max-width:420px){.prow .posseg{display:grid;grid-template-columns:1fr 1fr}}
 /* Einblenden pro Linie */
-.stage.fx .lb,.stage.fx .gkline,.stage.fx .urink,.stage.fx .ur,.stage.fx .tg,.stage.fx .krow,.stage.fx .kq,.stage.fx .kli,.stage.fx .smleft,.stage.fx .smc,.stage.fx .cmr,.stage.fx .kor,.stage.fx .kcol .kq,.stage.fx .krest .kli{animation:cardin .7s cubic-bezier(.2,.7,.2,1) both;animation-delay:var(--d,0s)}
+.stage.fx .lb,.stage.fx .gkline,.stage.fx .urink,.stage.fx .ur,.stage.fx .tg,.stage.fx .krow,.stage.fx .kq,.stage.fx .kli,.stage.fx .smleft,.stage.fx .smc,.stage.fx .cmr,.stage.fx .kor,.stage.fx .kcol .kq,.stage.fx .krest .kli{animation:cardin .7s cubic-bezier(.2,.7,.2,1) both;animation-delay:calc(var(--d,0s) + .3s)}
 @keyframes cardin{from{opacity:0;transform:translateY(22px)}to{opacity:1;transform:none}}
+/* Uebergaenge: Wisch mit Logo, Kopfzeile, getippter Titel, aufploppende Uebung */
+.stage .wipe{position:absolute;top:0;bottom:0;left:-12%;width:124%;z-index:60;pointer-events:none;display:grid;place-items:center}
+.stage .wipe img{width:230px;height:auto;filter:drop-shadow(0 10px 30px rgba(0,0,0,.5))}
+.stage .wipe.in{background:linear-gradient(90deg,var(--stage) 0 86%,#f5c518 86% 92%,transparent 92%);animation:wipein .42s cubic-bezier(.7,0,.5,1) both}
+.stage .wipe.out{background:linear-gradient(90deg,transparent 0 8%,#f5c518 8% 14%,var(--stage) 14%);animation:wipeout .6s cubic-bezier(.45,0,.2,1) .06s both}
+@keyframes wipein{from{transform:translateX(-100%)}to{transform:translateX(0)}}
+@keyframes wipeout{from{transform:translateX(-5%)}to{transform:translateX(100%)}}
+.stage.fx .tvh{animation:slin .6s cubic-bezier(.2,.7,.2,1) .22s both}
+@keyframes slin{from{opacity:0;transform:translateX(-46px)}to{opacity:1;transform:none}}
+.stage.fx .tvh .t .ch{animation:tvis .01s linear var(--t) both,tcar .11s steps(1,end) var(--t) forwards}
+@keyframes tvis{from{opacity:0}to{opacity:1}}
+@keyframes tcar{from{box-shadow:5px 0 0 #f5c518}to{box-shadow:none}}
+.stage .tvh .t .cur{display:inline-block;width:.08em;height:.78em;margin-left:.05em;margin-right:-.13em;vertical-align:-.04em;background:#f5c518;opacity:0}
+.stage.fx .tvh .t .cur{animation:curb 2.6s steps(1,end) var(--t) forwards}
+@keyframes curb{0%{opacity:1}20%{opacity:0}40%{opacity:1}60%{opacity:0}80%{opacity:1}100%{opacity:0}}
+.stage.fx .tdi{animation:popin .75s cubic-bezier(.2,.9,.25,1.2) .4s both}
+@keyframes popin{from{opacity:0;transform:scale(.78) rotate(-2.5deg)}to{opacity:1;transform:none}}
+.stage.fx .tdh{animation:slin .5s cubic-bezier(.2,.7,.2,1) var(--t,.9s) both}
+.stage .tdd .w{display:inline-block}
+.stage.fx .tdd .w{animation:wup .42s cubic-bezier(.2,.7,.2,1) var(--t) both}
+@keyframes wup{from{opacity:0;transform:translateY(.45em)}to{opacity:1;transform:none}}
+.stage.fx .tdleg span{animation:popin .45s cubic-bezier(.2,.9,.25,1.4) var(--t,1.6s) both}
+.stage.fx .tdnext{animation:fadein .6s var(--t,2s) both}
+.stage .bignum{position:absolute;right:56px;bottom:-110px;font-family:var(--display);font-weight:800;font-size:600px;line-height:1;color:transparent;-webkit-text-stroke:3px rgba(245,197,24,.13);pointer-events:none;letter-spacing:-.02em}
+.stage.fx .bignum{animation:numin 1.1s cubic-bezier(.2,.8,.2,1) .3s both}
+@keyframes numin{from{opacity:0;transform:translateY(120px)}to{opacity:1;transform:none}}
+@media (prefers-reduced-motion:reduce){.stage .wipe{display:none}.stage.fx .tvh,.stage.fx .tvh .t .ch,.stage.fx .tvh .t .cur,.stage.fx .tdi,.stage.fx .tdh,.stage.fx .tdd .w,.stage.fx .tdleg span,.stage.fx .tdnext,.stage.fx .bignum{animation:none}}
+
 @media (prefers-reduced-motion:reduce){.stage.fx .lb,.stage.fx .gkline,.stage.fx .urink,.stage.fx .ur,.stage.fx .tg,.stage.fx .krow,.stage.fx .kq,.stage.fx .kli,.stage.fx .smleft,.stage.fx .smc,.stage.fx .cmr,.stage.fx .kor,.stage.fx .kcol .kq,.stage.fx .krest .kli{animation:none}}
 /* Handy-Ansicht */
 html.mobon,html.mobon body{overflow:hidden}
@@ -1598,12 +1626,14 @@ function slidesFor(e){
   }
   return out.concat(boardSlides());
 }
-let slideIdx=0,slideTimer=null,lastStageKey=null;
+let slideIdx=0,slideTimer=null,lastStageKey=null,slideKey=null,slideEnd=0;
+const RM=()=>{try{return matchMedia('(prefers-reduced-motion: reduce)').matches}catch(e){return false}};
 const pinActive=()=>{const c=tvc();return c.mode==='pin'&&!(c.back&&Date.now()-c.at>=c.back*60000)};
 function curSlide(){
   const c=tvc(),e=tvEvent(),sl=slidesFor(e);
   if(pinActive()){const p=sl.find(s=>s.k===c.pin);if(p)return p;if(String(c.pin).startsWith('b:')){const b=BD(c.pin.slice(2));if(b)return {k:c.pin,n:'Tafel: '+bName(b),board:true}}}
   if(!sl.length)return null;
+  const i=sl.findIndex(x=>x.k===slideKey);if(i>=0){slideIdx=i;return sl[i]}
   return sl[slideIdx%sl.length];
 }
 const hhmm=t=>new Date(t).toLocaleTimeString('de-AT',{hour:'2-digit',minute:'2-digit'});
@@ -1651,16 +1681,46 @@ function renderStage(anim){
   clearTimeout(slideTimer);
   const st=$('#stage');if(!st)return;
   const c=tvc(),e=tvEvent(),sl=slidesFor(e),cur=curSlide();
-  const skey=(e?e.x.id:'')+'|'+(cur?cur.k:'');st.classList.toggle('fx',!!anim||skey!==lastStageKey);lastStageKey=skey;
+  const skey=(e?e.x.id:'')+'|'+(cur?cur.k+'|'+cur.n:''),changed=skey!==lastStageKey;lastStageKey=skey;
   const pinned=pinActive()&&cur&&cur.k===c.pin,show=!pinned&&sl.length>1;
+  // Gleiche Folie bei einem Daten-Update: Restzeit und Fortschrittsbalken laufen weiter statt neu zu starten
+  if(cur&&(changed||cur.k!==slideKey||!slideEnd)){slideKey=cur.k;slideEnd=Date.now()+dur(cur)*1000}
+  const D=dur(cur),left=Math.max(400,slideEnd-Date.now()),gone=Math.max(0,D-left/1000),fx=changed&&!RM();
+  st.classList.toggle('fx',changed);st.classList.remove('fade');
   st.innerHTML=(cur?stageFor(e,cur):tvHead('Kabinen-TV','Kein Termin','','')+'<div class="tvempty">Lege im Trainer-Bereich ein Training oder Spiel an.</div>')+
-    (show?`<div class="tvfoot"><div class="tvdots">${sl.map(s=>`<i class="${s.k===cur.k?'on':''}"></i>`).join('')}</div><div class="tvbar"><b style="animation-duration:${dur(cur)}s"></b></div></div>`:'');
-  if(anim){st.classList.remove('fade');void st.offsetWidth;st.classList.add('fade')}
+    (show?`<div class="tvfoot"><div class="tvdots">${sl.map(s=>`<i class="${s.k===cur.k?'on':''}"></i>`).join('')}</div><div class="tvbar"><b style="animation-duration:${D}s;animation-delay:-${gone.toFixed(2)}s"></b></div></div>`:'')+
+    (fx?`<div class="wipe out"><img src="${LOGO}" alt=""></div>`:'');
   layoutStage(e,cur);
-  if(show)slideTimer=setTimeout(()=>{slideIdx++;renderStage(true)},dur(cur)*1000);
+  if(fx&&cur)animIn(st,cur);
+  if(show)slideTimer=setTimeout(nextSlide,left);
   else if(pinned&&c.back)slideTimer=setTimeout(()=>{if(U.tab==='tv')render()},Math.max(1000,c.at+c.back*60000-Date.now()+50));
 }
 const dur=s=>tvc().sec*(s&&s.drill&&tvc().dx2?2:1);
+// Naechste Folie: gelber Wisch deckt ab, dann kommt die neue Folie darunter hervor
+function nextSlide(){
+  const go=()=>{const sl=slidesFor(tvEvent());if(!sl.length){renderStage(true);return}const i=sl.findIndex(x=>x.k===slideKey);slideIdx=(i<0?slideIdx:i+1)%sl.length;slideKey=sl[slideIdx].k;slideEnd=0;renderStage(true)};
+  const st=$('#stage');
+  if(st&&!RM()){const w=document.createElement('div');w.className='wipe in';w.innerHTML=`<img src="${LOGO}" alt="">`;st.appendChild(w);slideTimer=setTimeout(go,420)}else go();
+}
+// Einblenden: Titel wird getippt, Beschreibung Wort fuer Wort, Skizze ploppt auf
+function animIn(st,s){
+  const tt=st.querySelector('.tvh .t');let T=.45;
+  if(s.drill&&tt&&!tt.dataset.ty){
+    const txt=tt.textContent,ch=[...txt],step=Math.min(.055,1.1/Math.max(1,ch.length));tt.dataset.ty='1';tt.textContent='';
+    ch.forEach((c,i)=>{const sp=document.createElement('span');sp.className='ch';sp.textContent=c;sp.style.setProperty('--t',(T+i*step).toFixed(3)+'s');tt.appendChild(sp)});
+    T+=ch.length*step;const cu=document.createElement('span');cu.className='cur';cu.style.setProperty('--t',T.toFixed(3)+'s');tt.appendChild(cu);
+  }
+  if(!s.drill)return;
+  const h=st.querySelector('.tdh');if(h)h.style.setProperty('--t',(T+.05).toFixed(2)+'s');T+=.25;
+  const p=st.querySelector('.tdd');
+  if(p&&!p.dataset.ty){
+    const parts=p.textContent.split(/(\s+)/),nw=parts.filter(x=>x&&!/^\s+$/.test(x)).length,step=Math.min(.07,1.9/Math.max(1,nw));p.dataset.ty='1';p.textContent='';let k=0;
+    parts.forEach(x=>{if(!x)return;if(/^\s+$/.test(x)){p.appendChild(document.createTextNode(x));return}const sp=document.createElement('span');sp.className='w';sp.textContent=x;sp.style.setProperty('--t',(T+k*step).toFixed(3)+'s');k++;p.appendChild(sp)});
+    T+=k*step;
+  }
+  st.querySelectorAll('.tdleg span').forEach((x,i)=>x.style.setProperty('--t',(T+.1+i*.09).toFixed(2)+'s'));
+  const nx=st.querySelector('.tdnext');if(nx)nx.style.setProperty('--t',(T+.5).toFixed(2)+'s');
+}
 function stageFor(e,s){
   if(s.board){const b=BD(s.k.slice(2));if(b)return tvBoard(b)}
   if(s.k==='kasse')return tvKasse();
@@ -1904,7 +1964,7 @@ function tvDrill(t,i){
   const d=DR(t.drills[i]);if(!d)return trHead(t,'Training · Übungen');
   const n=t.drills.length;let start=0;for(let k=0;k<i;k++)start+=(DR(t.drills[k])||{}).min||0;
   const from=t.time?endTime(t.time,start):'',to=t.time?endTime(t.time,start+d.min):'';
-  return `<div class="ring"></div><div class="ring b"></div>
+  return `<div class="ring"></div><div class="ring b"></div><div class="bignum">${String(i+1).padStart(2,'0')}</div>
   <div class="tvh"><img src="${LOGO}" alt=""><div style="min-width:0"><div class="e">Training · Übung ${i+1} von ${n}</div><div class="t fit">${esc(d.name)}</div><div class="m">${esc(d.cat)} · ${d.min} Minuten${from?` · ${from}–${to} Uhr`:''}</div></div></div>
   <div class="tvdrill"><div class="tdi">${dimg(d)?`<img src="${dimg(d)}" alt=""${d.photo?' class="foto"':''}>`:''}</div>
   <div class="tdt"><div class="tdh">So geht's</div><p class="tdd">${esc(d.desc||'Keine Beschreibung hinterlegt.')}</p>
