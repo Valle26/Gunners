@@ -467,6 +467,49 @@ i.pb.pb-G{color:var(--fg)}
 /* Einblenden pro Linie */
 .stage.fx .lb,.stage.fx .gkline,.stage.fx .urink,.stage.fx .ur,.stage.fx .tg,.stage.fx .krow,.stage.fx .kq,.stage.fx .kli,.stage.fx .smleft,.stage.fx .smc,.stage.fx .cmr,.stage.fx .kor,.stage.fx .kcol .kq,.stage.fx .krest .kli{animation:cardin .7s cubic-bezier(.2,.7,.2,1) both;animation-delay:calc(var(--d,0s) + .3s)}
 @keyframes cardin{from{opacity:0;transform:translateY(22px)}to{opacity:1;transform:none}}
+.stage .tvclock{position:absolute;right:72px;bottom:9px;z-index:70;font-family:var(--display);font-weight:700;font-size:46px;line-height:1;color:var(--fg);font-variant-numeric:tabular-nums;letter-spacing:.02em;pointer-events:none}
+.stage .tvclock i{font-style:normal;color:var(--accent);animation:clk 2s steps(1,end) infinite;padding-inline:.04em}
+@keyframes clk{0%{opacity:1}50%{opacity:.25}}
+.stage .tvfoot{right:250px}
+/* Kabinendienst im Kopf der Gruppen-Folie */
+.tvh .r .tduty{display:flex;flex-direction:column;align-items:flex-end;gap:12px;background:#16171a;border:1px solid #26272c;border-radius:20px;padding:14px 22px;text-transform:none;letter-spacing:0}
+.tduty .tdl{font-family:var(--display);font-weight:700;letter-spacing:.16em;text-transform:uppercase;color:var(--accent);font-size:22px;line-height:1}
+.tduty .tdp{display:flex;gap:22px}
+.tduty .tdc{display:flex;align-items:center;gap:12px}
+.tduty .tda{width:60px;height:60px;border-radius:50%;overflow:hidden;display:block;flex:none;background:#24252a;box-shadow:0 0 0 3px var(--accent)}
+.tduty .tda .ph{width:100%;height:100%;object-fit:cover;object-position:50% 18%;display:block}
+.tduty .tda .ini{display:grid;place-items:center;width:100%;height:100%;font-size:22px;color:var(--fg)}
+.tduty .tdc b{font-family:var(--display);font-weight:700;font-size:36px;color:var(--fg);text-transform:uppercase;line-height:1}
+.stage.fx .tduty{animation:slinr .6s cubic-bezier(.2,.7,.2,1) .55s both}
+@keyframes slinr{from{opacity:0;transform:translateX(46px)}to{opacity:1;transform:none}}
+/* Torbild-Folie */
+.gkwrap{position:relative;flex:1;min-height:0;display:grid;grid-template-columns:1.6fr 1fr;gap:44px}
+.gkn{display:flex;flex-direction:column;justify-content:center;gap:12px;min-height:0}
+.gknet{display:block;width:100%;height:auto;max-height:calc(100% - 40px);border-radius:18px}
+.gkcap{display:flex;justify-content:space-between;gap:20px;color:#a6a49c;font-size:22px;font-family:var(--display);font-weight:600;letter-spacing:.04em;text-transform:uppercase}
+.gkcap i{font-style:normal}.gkcap i.sv{color:#8d96a3}
+.gkr{display:flex;flex-direction:column;gap:18px;min-height:0}
+.gkq{font-family:var(--display);font-weight:700;font-size:96px;line-height:1;margin-top:8px}
+.gkc small{display:block;color:#a6a49c;font-size:22px;margin-top:8px}
+.gkp{display:flex;justify-content:space-between;align-items:baseline;border-top:1px solid #222327;margin-top:10px;padding-top:8px}
+.gkp span{font-family:var(--display);font-weight:700;font-size:30px;text-transform:uppercase}.gkp b{font-family:var(--display);font-size:34px}
+.gkhot{font-family:var(--display);font-weight:700;font-size:50px;text-transform:uppercase;line-height:1.05;margin-top:8px}
+.gkhot.dim{color:#6e6c66}
+.gkzr{display:grid;grid-template-columns:240px minmax(0,1fr) 86px;align-items:center;gap:16px;font-size:23px;color:#c9c7bf;padding:5px 0}
+.gkzr i{position:relative;height:12px;border-radius:6px;background:#222327;overflow:hidden}
+.gkzr i b,.gkzr i em{position:absolute;left:0;top:0;bottom:0;border-radius:6px}
+.gkzr i b{background:#3a3c42}
+.gkzr strong{font-family:var(--display);font-size:32px;text-align:right;color:var(--fg)}
+.gkzr strong small{display:inline;font-size:20px;color:#a6a49c;margin:0}
+.gkmiss{color:#6e6c66;font-size:20px}
+.stage.fx .gkn,.stage.fx .gkc{animation:cardin .7s cubic-bezier(.2,.7,.2,1) both;animation-delay:calc(var(--d,0s) + .3s)}
+.stage.fx .gknet .gm{animation:gmpop .45s cubic-bezier(.2,.9,.25,1.4) var(--t,.6s) both;transform-box:fill-box;transform-origin:center}
+.stage.fx .gknet .gh{animation:ghin .9s .5s both}
+@keyframes ghin{from{opacity:0}}
+@keyframes gmpop{from{opacity:0;transform:scale(0)}to{opacity:1;transform:none}}
+@media (prefers-reduced-motion:reduce){.stage.fx .tduty,.stage.fx .gkn,.stage.fx .gkc,.stage.fx .gknet .gm,.stage.fx .gknet .gh{animation:none}}
+@media (prefers-reduced-motion:reduce){.stage .tvclock i{animation:none}}
+
 /* Uebergaenge: Wisch mit Logo, Kopfzeile, getippter Titel, aufploppende Uebung */
 .stage .wipe{position:absolute;top:0;bottom:0;left:-12%;width:124%;z-index:60;pointer-events:none;display:grid;place-items:center}
 .stage .wipe img{width:230px;height:auto;filter:drop-shadow(0 10px 30px rgba(0,0,0,.5))}
@@ -924,7 +967,7 @@ function applyDoc(key,data){
 function normalize(){
   fixTvc(S);fixPP(S);
   S.games.forEach(g=>{['lines','pairs','pp','pk'].forEach(k=>{if(!Array.isArray(g[k]))g[k]=[]})});
-  S.trainings.forEach(t=>{if(!Array.isArray(t.gks))t.gks=[];if(!Array.isArray(t.drills))t.drills=[];if(!Array.isArray(t.groups))t.groups=[];if(t.topic==null)t.topic='';if(!t.roles||typeof t.roles!=='object'||Array.isArray(t.roles))t.roles={}});
+  S.trainings.forEach(t=>{if(!Array.isArray(t.gks))t.gks=[];if(!Array.isArray(t.drills))t.drills=[];if(!Array.isArray(t.groups))t.groups=[];if(t.topic==null)t.topic='';if(!Array.isArray(t.duty))t.duty=[];if(!t.roles||typeof t.roles!=='object'||Array.isArray(t.roles))t.roles={}});
   S.players.forEach(p=>{if(p.num==null)p.num=''});
   S.boards.forEach(b=>{if(!Array.isArray(b.strokes))b.strokes=[];if(!b.view)b.view='full'});
   if(!Array.isArray(S.cats))S.cats=CATS.slice();
@@ -1197,6 +1240,7 @@ function slidesFor(e){
     if(c.gs.pp!==false&&g.pp.length)out.push({k:'pp',n:'Powerplay'});
     if(c.gs.pk!==false&&g.pk.length)out.push({k:'pk',n:'Unterzahl'});
     const smg=smFor(g);if(c.gs.shotmap!==false&&smg)out.push({k:'shotmap',n:smg.status==='live'?'Shot Map (live)':'Shot Map'});
+    if(smg)[['gkus','us','Torbild: unser Goalie'],['gkthem','th','Torbild: Goalie Gegner']].forEach(([k,sd,n])=>{if(c.gs[k]!==false&&smNetInfo(smg,sd).raw.length)out.push({k,n})});
     if(!out.length)out.push({k:'lines',n:'Linien'});
   }else{const t=e.x;
     if(c.ts.groups!==false)out.push({k:'groups',n:'Gruppen'});
@@ -1229,13 +1273,17 @@ function renderStage(anim){
   st.classList.toggle('fx',changed);st.classList.remove('fade');
   st.innerHTML=(cur?stageFor(e,cur):tvHead('Kabinen-TV','Kein Termin','','')+'<div class="tvempty">Lege im Trainer-Bereich ein Training oder Spiel an.</div>')+
     (show?`<div class="tvfoot"><div class="tvdots">${sl.map(s=>`<i class="${s.k===cur.k?'on':''}"></i>`).join('')}</div><div class="tvbar"><b style="animation-duration:${D}s;animation-delay:-${gone.toFixed(2)}s"></b></div></div>`:'')+
-    (fx?`<div class="wipe out"><img src="${LOGO}" alt=""></div>`:'');
+    (fx?`<div class="wipe out"><img src="${LOGO}" alt=""></div>`:'')+`<div class="tvclock" aria-label="Uhrzeit">${clockHtml()}</div>`;
   layoutStage(e,cur);
   if(fx&&cur)animIn(st,cur);
   if(show)slideTimer=setTimeout(nextSlide,left);
   else if(pinned&&c.back)slideTimer=setTimeout(()=>{if(U.tab==='tv')render()},Math.max(1000,c.at+c.back*60000-Date.now()+50));
 }
 const dur=s=>tvc().sec*(s&&s.drill&&tvc().dx2?2:1);
+// Uhr unten rechts: laeuft unabhaengig von den Folien weiter
+const clockTxt=()=>{const d=new Date();return String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0')};
+const clockHtml=()=>{const [h,m]=clockTxt().split(':');return `<b>${h}<i>:</i>${m}</b>`};
+setInterval(()=>{const c=document.querySelector('#stage .tvclock');if(c&&c.dataset.t!==clockTxt()){c.dataset.t=clockTxt();c.innerHTML=clockHtml()}},1000);
 // Naechste Folie: gelber Wisch deckt ab, dann kommt die neue Folie darunter hervor
 function nextSlide(){
   const go=()=>{const sl=slidesFor(tvEvent());if(!sl.length){renderStage(true);return}const i=sl.findIndex(x=>x.k===slideKey);slideIdx=(i<0?slideIdx:i+1)%sl.length;slideKey=sl[slideIdx].k;slideEnd=0;renderStage(true)};
@@ -1265,6 +1313,7 @@ function stageFor(e,s){
   if(s.board){const b=BD(s.k.slice(2));if(b)return tvBoard(b)}
   if(s.k==='kasse')return tvKasse();
   if(s.k==='shotmap')return tvShotmap(smFor(e&&e.k==='game'?e.x:null),tvc().smScope);
+  if(s.k==='gkus'||s.k==='gkthem')return tvGoalie(smFor(e&&e.k==='game'?e.x:null),s.k==='gkus'?'us':'th');
   if(!e)return tvHead('Kabinen-TV','Kein Termin','','');
   if(e.k==='game'){const g=e.x;return s.k==='pp'?tvUmbrella(g):s.k==='pk'?tvUnits(g,'PK'):tvGame(g)}
   if(s.k==='groups')return tvTraining(e.x);
@@ -1441,6 +1490,58 @@ function tvShotCmp(g){
   return H.html+`<div class="smcmp"><div class="cmh"><span></span><span class="us">${esc(H.usN)}</span><span>Schüsse aufs Tor</span><span>${esc(H.thN)}</span><span>Tore</span><span>Versuche</span><span>Slot</span></div>
   ${rows.map((r,i)=>{const U=r.s[us],O=r.s[th];return `<div class="cmr${r.tot?' tot':''}" style="--d:${(.15+i*.3).toFixed(2)}s"><span class="cl">${r.l}</span><b class="us">${U.sog}</b>${r.tot?'<span></span>':bar(U.sog,O.sog)}<b>${O.sog}</b><span class="cv"><em>${U.g}</em>:${O.g}</span><span class="cv"><em>${U.att}</em>:${O.att}</span><span class="cv"><em>${U.slot}</em>:${O.slot}</span></div>`}).join('')}</div>`;
 }
+/* ---------- Torbild: wo der Goalie die Tore bekommt (Daten aus der Shot Map) ---------- */
+// Tor von vorne (Sicht des Schuetzen), Oeffnung 180x120; nx/ny 0..1 wie in der Shot Map
+const NZ={x0:10,y0:12,w:180,h:120,row:[.4,.72],col:[[.33,.67],[.3,.7],[.38,.62]],n:[['Kreuzeck links','Oben Mitte','Kreuzeck rechts'],['Halbhoch links','Körper','Halbhoch rechts'],['Schoner links','Five Hole','Schoner rechts']]};
+const nzOf=s=>{const ri=s.ny<NZ.row[0]?0:s.ny<NZ.row[1]?1:2,c=NZ.col[ri];return [ri,s.nx<c[0]?0:s.nx<c[1]?1:2]};
+const nzSide=(ci,gh)=>ci===1?null:((ci===2)===(gh==='L')?'Fanghand':'Stockhand');
+const nzLabel=(ri,ci,gh)=>{const sd=nzSide(ci,gh);if(!sd)return NZ.n[ri][ci];return ri===0?sd+' oben':ri===1?sd+' halbhoch':'Schoner '+sd};
+function smNetInfo(g,side){
+  const us=smUs(g),gt=side==='us'?us:(us==='H'?'A':'H');
+  const on=(g.shots||[]).filter(s=>s.t!==gt&&(s.r==='G'||s.r==='S')&&s.gk!=='');
+  const raw=on.filter(s=>s.nx!=null&&s.ny!=null);
+  const cnt={L:0,R:0};raw.forEach(s=>{if(s.gh==='L'||s.gh==='R')cnt[s.gh]++});
+  let dh=cnt.R>cnt.L?'R':'L';
+  if(!cnt.L&&!cnt.R&&g.gkHand){const k=Object.keys(g.gkHand).find(k=>k.startsWith(gt+'|'));if(k)dh=g.gkHand[k]==='R'?'R':'L'}
+  // Schuesse auf Goalies mit anderer Fanghand gespiegelt, damit Fanghand/Stockhand stimmen
+  const pts=raw.map(s=>Object.assign({},s,s.gh&&s.gh!==dh?{nx:1-s.nx}:{}));
+  const Z=[0,1,2].map(()=>[0,1,2].map(()=>({sog:0,g:0})));pts.forEach(s=>{const [ri,ci]=nzOf(s);Z[ri][ci].sog++;if(s.r==='G')Z[ri][ci].g++});
+  const gks=[...new Set(on.map(s=>s.gk).filter(x=>x!=null&&x!==''))];
+  return {gt,on,raw,pts,dh,Z,gks,sog:on.length,ga:on.filter(s=>s.r==='G').length};
+}
+function smNetSVG(I,col){
+  const {x0,y0,w,h}=NZ,x1=x0+w,y1=y0+h,r=16,frame=`M${x0} ${y1}V${y0+r}Q${x0} ${y0} ${x0+r} ${y0}H${x1-r}Q${x1} ${y0} ${x1} ${y0+r}V${y1}`;
+  const ys=[y0,y0+NZ.row[0]*h,y0+NZ.row[1]*h,y1],maxG=Math.max(1,...I.Z.flat().map(z=>z.g));
+  const zones=I.Z.map((row,ri)=>row.map((z,ci)=>{const c=NZ.col[ri],xs=[x0,x0+c[0]*w,x0+c[1]*w,x1],X=xs[ci],W=xs[ci+1]-xs[ci],Y=ys[ri],H=ys[ri+1]-ys[ri];
+    return (z.g?`<rect class="gh" x="${X}" y="${Y}" width="${W}" height="${H}" fill="${col}" opacity="${(.12+.3*z.g/maxG).toFixed(2)}"/>`:'')+
+      `<rect x="${X}" y="${Y}" width="${W}" height="${H}" fill="none" stroke="#9aa6b8" stroke-width=".6" stroke-dasharray="3 3"/>`}).join('')).join('');
+  const pts=I.pts.slice().sort((a,b)=>(a.r==='G')-(b.r==='G'));
+  const marks=pts.map((s,i)=>{const x=(x0+s.nx*w).toFixed(1),y=(y0+s.ny*h).toFixed(1),t=`--t:${(.55+i*Math.min(.06,1.4/Math.max(1,pts.length))).toFixed(2)}s`;
+    return s.r==='G'?`<circle class="gm" style="${t}" cx="${x}" cy="${y}" r="4.6" fill="${col}" stroke="#15181d" stroke-width="1.1"/>`:`<circle class="gm" style="${t}" cx="${x}" cy="${y}" r="2.5" fill="#8d96a3" stroke="#ffffff" stroke-width=".8"/>`}).join('');
+  return `<svg class="gknet" viewBox="0 0 200 146" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Tor von vorne mit Treffern">
+  <defs><pattern id="gkmesh" width="8" height="8" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><path d="M0 0H8M0 0V8" stroke="#c9d1dc" stroke-width=".6" fill="none"/></pattern><clipPath id="gkclip"><path d="${frame}Z"/></clipPath></defs>
+  <rect x="0" y="0" width="200" height="146" rx="10" fill="#e9eef3"/>
+  <g clip-path="url(#gkclip)"><rect x="${x0}" y="${y0}" width="${w}" height="${h}" fill="#ffffff"/><rect x="${x0}" y="${y0}" width="${w}" height="${h}" fill="url(#gkmesh)"/>${zones}</g>
+  <line x1="0" y1="${y1+2}" x2="200" y2="${y1+2}" stroke="#d7263d" stroke-width="1.6"/>
+  <path d="${frame}" stroke="#d7263d" stroke-width="6" fill="none" stroke-linecap="round"/>
+  <g>${marks}</g></svg>`;
+}
+function tvGoalie(g,side){
+  if(!g)return tvHead('Torbild','Kein Spiel','','')+'<div class="tvempty">Kein Shot-Map-Spiel verknüpft.</div>';
+  const I=smNetInfo(g,side),us=smUs(g),usN=smShort(us==='H'?g.home:g.away),thN=smShort(us==='H'?g.away:g.home);
+  const mine=side==='us',col=mine?'#ff5a5f':'#f5c518',st=g.status==='live'?`Live · ${smPl(g.period||1)}`:'Endstand';
+  const fq=(sog,ga)=>sog?(Math.round((sog-ga)/sog*1000)/10).toLocaleString('de-AT',{maximumFractionDigits:1})+' %':'–';
+  const names=I.gks.length?I.gks.map(n=>esc(String(n))).join(' / '):esc(mine?usN:thN);
+  const zl=[];I.Z.forEach((r,ri)=>r.forEach((z,ci)=>{if(z.sog)zl.push(Object.assign({n:nzLabel(ri,ci,I.dh)},z))}));zl.sort((a,b)=>b.g-a.g||b.sog-a.sog);
+  const top=zl.length&&zl[0].g?zl.filter(z=>z.g===zl[0].g):[],maxS=Math.max(1,...zl.map(z=>z.sog)),miss=I.on.length-I.raw.length;
+  const per=I.gks.length>1?I.gks.map(n=>{const o=I.on.filter(s=>s.gk===n),ga=o.filter(s=>s.r==='G').length;return `<div class="gkp"><span>${esc(String(n))}</span><b style="color:${col}">${fq(o.length,ga)}</b></div>`}).join(''):'';
+  return tvHead(`Torbild · ${mine?'Unser Goalie':'Goalie '+esc(thN)}`,names,`${esc(usN)} – ${esc(thN)} · ${st} · ${mine?'Schüsse auf unser Tor':'unsere Schüsse auf das Tor'}`,demoTag())+
+  `<div class="gkwrap"><div class="gkn" style="--d:.1s">${smNetSVG(I,col)}<div class="gkcap"><span>◀ ${nzSide(0,I.dh)}</span><span>Sicht des Schützen · <i style="color:${col}">●</i> Tor · <i class="sv">●</i> gehalten</span><span>${nzSide(2,I.dh)} ▶</span></div></div>
+  <div class="gkr"><div class="smc gkc" style="--d:.35s"><div class="sml">Fangquote</div><div class="gkq" style="color:${col}">${fq(I.sog,I.ga)}</div><small>${I.sog-I.ga} ${I.sog-I.ga===1?'Parade':'Paraden'} · ${I.sog} ${I.sog===1?'Schuss':'Schüsse'} aufs Tor · ${I.ga} ${I.ga===1?'Tor':'Tore'}</small>${per}</div>
+  <div class="smc gkc" style="--d:.55s"><div class="sml">Die meisten Tore</div>${top.length?`<div class="gkhot" style="color:${col}">${top.slice(0,3).map(z=>z.n).join(' · ')}</div><small>${top[0].g} ${top[0].g===1?'Tor':'Tore'}${top.length>1?' je Zone':''}</small>`:'<div class="gkhot dim">Noch keine Tore</div>'}</div>
+  <div class="smc gkc gkz" style="--d:.75s"><div class="sml">Zonen · Tore / Schüsse</div>${zl.slice(0,5).map(z=>`<div class="gkzr"><span>${z.n}</span><i><b style="width:${(z.sog/maxS*100).toFixed(0)}%"></b><em style="width:${(z.g/maxS*100).toFixed(0)}%;background:${col}"></em></i><strong>${z.g}<small> / ${z.sog}</small></strong></div>`).join('')}</div>
+  ${miss?`<div class="gkmiss">${miss} ${miss===1?'Schuss':'Schüsse'} ohne Torbild erfasst</div>`:''}</div></div>`;
+}
 function tvKasse(){
   const k=KC();if(!k)return tvHead('Mannschaftskasse','Strafen und Rangliste','','')+'<div class="tvempty">Keine Kassendaten.</div>';
   const open=k.rows.filter(r=>r.open>0.004||r.beer>0).sort((a,b)=>b.open-a.open||b.beer-a.beer);
@@ -1491,11 +1592,14 @@ function tvCols(t){
   const gks=gkList(t);if(gks.length)cols.push({c:null,ids:[],gk:gks});
   return cols;
 }
-function trHead(t,eye){const meta=[t.time?t.time+' Uhr':'',t.topic?esc(t.topic):'',trCount(t)+' Spieler'].filter(Boolean).join(' · ');return tvHead(eye,esc(fmtDate(t.date,true)||'Training'),meta,'')}
+function trHead(t,eye,right){const meta=[t.time?t.time+' Uhr':'',t.topic?esc(t.topic):'',trCount(t)+' Spieler'].filter(Boolean).join(' · ');return tvHead(eye,esc(fmtDate(t.date,true)||'Training'),meta,right||'')}
+// Kabinendienst: wer nach dem Training die Kabine aufraeumt
+function tvDuty(t){const ps=(t.duty||[]).map(P).filter(Boolean);if(!ps.length)return '';
+  return `<div class="tduty"><div class="tdl">Kabinendienst</div><div class="tdp">${ps.slice(0,4).map(p=>`<span class="tdc"><span class="tda">${photo(p)}</span><b>${esc(p.last)}</b></span>`).join('')}</div></div>`}
 function tvTraining(t){
   const cols=tvCols(t);
-  if(!cols.length)return trHead(t,'Training · Gruppen')+'<div class="tvempty">Noch niemand eingeteilt.</div>';
-  return trHead(t,'Training · Gruppen')+
+  if(!cols.length)return trHead(t,'Training · Gruppen',tvDuty(t))+'<div class="tvempty">Noch niemand eingeteilt.</div>';
+  return trHead(t,'Training · Gruppen',tvDuty(t))+
   `<div class="tvgroups" style="grid-template-columns:repeat(${cols.length},minmax(0,1fr))">${cols.map(col=>{const n=col.gk.length+col.ids.length;
     const h=col.c?`<div class="tg-h" style="background:${col.c.c};color:${col.c.t}"><span>${col.c.n}</span><small>${n}</small></div>`:`<div class="tg-h gkcol"><span>Goalies</span><small>${n}</small></div>`;
     return `<div class="tg" style="--d:${(cols.indexOf(col)*.35+.15).toFixed(2)}s">${h}<div class="tg-b">${col.gk.map(p=>tcard(p,true)).join('')}${col.ids.map(id=>tcard(P(id),false,trRole(t,id))).join('')||(col.gk.length?'':'<div class="tvempty">Noch niemand eingeteilt</div>')}</div></div>`}).join('')}</div>`;
@@ -1538,9 +1642,12 @@ function layoutStage(e,s){
   }else if(s&&s.drill){
     const p=st.querySelector('.tdd');if(p){p.style.fontSize='';let fs=parseFloat(getComputedStyle(p).fontSize),i=0;const box=st.querySelector('.tdt');while(box.scrollHeight>box.clientHeight+1&&fs>22&&i<40){fs-=1;p.style.fontSize=fs+'px';i++}}
   }
-  st.querySelectorAll('.fit').forEach(el=>{el.style.fontSize='';let fs=parseFloat(getComputedStyle(el).fontSize),i=0;while(el.scrollWidth>el.clientWidth+1&&fs>10&&i<60){fs-=1;el.style.fontSize=fs+'px';i++}});
+  fitTexts(st);
+  // Logo und Fotos laden spaeter: danach Ueberschriften nochmal einpassen
+  st.querySelectorAll('img').forEach(im=>{if(!im.complete)im.addEventListener('load',()=>fitTexts(st),{once:true})});
   fitStage();
 }
+function fitTexts(st){st.querySelectorAll('.fit').forEach(el=>{el.style.fontSize='';let fs=parseFloat(getComputedStyle(el).fontSize),i=0;while(el.scrollWidth>el.clientWidth+1&&fs>10&&i<80){fs-=1;el.style.fontSize=fs+'px';i++}})}
 function fitStage(){
   const w=$('#stagewrap'),st=$('#stage');if(!w||!st)return;
   const fs=document.fullscreenElement===w;
@@ -1670,7 +1777,7 @@ function pinNote(){
 }
 setInterval(pinNote,3000);
 // Neue Version auf GitHub: der Fernseher lädt sich von selbst neu (alle 5 Minuten prüfen)
-const BUILD='a42a182fa0';
+const BUILD='cb07ab289b';
 async function checkVersion(){
   try{const r=await fetch(location.pathname+'?v='+Date.now(),{cache:'no-store'});if(!r.ok)return;const t=await r.text();const m=t.match(/const BUILD='([0-9a-f]{10})'/);if(m&&m[1]!==BUILD)location.reload()}catch(e){}
 }
